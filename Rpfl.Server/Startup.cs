@@ -4,8 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using System;
-using Yarp.ReverseProxy.Service.Proxy;
+using Yarp.ReverseProxy.Abstractions.Config;
 
 namespace Rpfl.Server
 {
@@ -22,8 +21,7 @@ namespace Rpfl.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHttpProxy(); 
-            services.AddHostedService<DataConnectionHostedService>();
+            services.AddHttpProxy();
             services.AddServiceAndOptions(this.GetType().Assembly, this.Configuration);
         }
 
@@ -34,6 +32,20 @@ namespace Rpfl.Server
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseWebSockets();
+            app.Use(next => async context =>
+            {
+                if (context.WebSockets.IsWebSocketRequest)
+                {
+                    var service = context.RequestServices.GetRequiredService<MainConnectionService>();
+                    await service.OnConnectedAsync(context);
+                }
+                else
+                {
+                    await next(context);
+                }
+            });
 
             app.UseSerilogRequestLogging();
             app.UseRouting();

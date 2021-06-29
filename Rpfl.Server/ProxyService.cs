@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -14,12 +13,15 @@ namespace Rpfl.Server
     {
         private readonly HttpMessageInvoker httpClient;
         private readonly IHttpProxy httpProxy;
+        private readonly MainConnectionService mainConnectionService;
 
         public ProxyService(
             IHttpProxy httpProxy,
+            MainConnectionService mainConnectionService,
             DataConnectionService dataConnectionService)
         {
             this.httpProxy = httpProxy;
+            this.mainConnectionService = mainConnectionService;
             this.httpClient = CreateHttpClient(dataConnectionService);
         }
 
@@ -37,9 +39,18 @@ namespace Rpfl.Server
 
         public async Task ProxyAsync(HttpContext httpContext)
         {
-            var destPrefix = $"http://{httpContext.Request.Host.Host}:5000/";
-            var requestProxyOptions = new RequestProxyOptions { Timeout = TimeSpan.FromSeconds(20d) };
-            await this.httpProxy.ProxyAsync(httpContext, destPrefix, httpClient, requestProxyOptions);
+            var domain = httpContext.Request.Host.Host;
+            if (this.mainConnectionService.TryGetUpStream(domain, out var upstream) == false)
+            {
+                httpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                await httpContext.Response.WriteAsync("上游服务未连接");
+            }
+            else
+            {
+                var destPrefix = upstream.ToString();
+                var requestProxyOptions = new RequestProxyOptions { Timeout = TimeSpan.FromSeconds(20d) };
+                await this.httpProxy.ProxyAsync(httpContext, destPrefix, httpClient, requestProxyOptions);
+            }
         }
     }
 }
