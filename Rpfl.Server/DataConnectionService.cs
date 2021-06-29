@@ -32,9 +32,10 @@ namespace Rpfl.Server
             this.connectionTable.TryAdd(connectionId, source);
 
             try
-            { 
-                var domain = "a.localhost";// context.DnsEndPoint.Host;
-                await this.mainConnectionService.NotifyCreateDataConnectionAsync(domain, connectionId, cancellation);
+            {
+                var key = new HttpRequestOptionsKey<string>("Domain");
+                context.InitialRequestMessage.Options.TryGetValue<string>(key, out var domain);
+                await this.mainConnectionService.NotifyCreateDataConnectionAsync(domain!, connectionId, cancellation);
                 return await source.Task;
             }
             finally

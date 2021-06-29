@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -49,7 +50,27 @@ namespace Rpfl.Server
             {
                 var destPrefix = upstream.ToString();
                 var requestProxyOptions = new RequestProxyOptions { Timeout = TimeSpan.FromSeconds(20d) };
-                await this.httpProxy.ProxyAsync(httpContext, destPrefix, httpClient, requestProxyOptions);
+
+                await this.httpProxy.ProxyAsync(httpContext, destPrefix, httpClient, requestProxyOptions, new myTran
+                {
+                    Host = upstream.Host,
+                    Domain = domain
+                });
+            }
+        }
+
+        class myTran : HttpTransformer
+        {
+            public string Domain { get; set; } = string.Empty;
+
+            public string Host { get; set; } = string.Empty;
+
+
+            public override async ValueTask TransformRequestAsync(HttpContext httpContext, HttpRequestMessage proxyRequest, string destinationPrefix)
+            {
+                await base.TransformRequestAsync(httpContext, proxyRequest, destinationPrefix);
+                proxyRequest.Headers.Host = Host;
+                proxyRequest.Options.TryAdd("Domain", Domain);
             }
         }
     }
