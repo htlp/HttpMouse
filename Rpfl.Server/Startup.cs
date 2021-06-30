@@ -1,45 +1,49 @@
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Rpfl.Server.Applications;
 using Serilog;
-using Yarp.ReverseProxy.Abstractions.Config;
 
 namespace Rpfl.Server
 {
-    public class Startup
+    sealed class Startup
     {
         public IConfiguration Configuration { get; }
 
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            this.Configuration = configuration;
         }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+        /// <summary>
+        /// 配置服务
+        /// </summary>
+        /// <param name="services"></param>
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHttpProxy();
-            services.AddServiceAndOptions(this.GetType().Assembly, this.Configuration);
+            services
+                .AddHttpProxy()
+                .AddSingleton<HttpProxyService>()
+                .AddSingleton<ConnectionService>()
+                .AddSingleton<TransportChannelService>();
+
+            services
+                .AddOptions<ListenOptions>().Bind(this.Configuration.GetSection("Listen"));
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ProxyService proxyService)
+        /// <summary>
+        /// 配置中间件
+        /// </summary>
+        /// <param name="app"></param> 
+        /// <param name="httpProxyService"></param>
+        public void Configure(IApplicationBuilder app, HttpProxyService httpProxyService)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
             app.UseWebSockets();
             app.Use(next => async context =>
             {
-                if (context.WebSockets.IsWebSocketRequest)
+                if (context.WebSockets.IsWebSocketRequest == true)
                 {
-                    var service = context.RequestServices.GetRequiredService<MainConnectionService>();
-                    await service.OnConnectedAsync(context);
+                    await context.RequestServices.GetRequiredService<ConnectionService>().OnConnectedAsync(context);
                 }
                 else
                 {
@@ -51,7 +55,7 @@ namespace Rpfl.Server
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
-                endpoints.Map("/{**catch-all}", proxyService.ProxyAsync);
+                endpoints.Map("/{**catch-all}", httpProxyService.ProxyAsync);
             });
         }
     }

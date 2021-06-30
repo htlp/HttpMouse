@@ -1,63 +1,105 @@
 ﻿using Microsoft.AspNetCore.Connections;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
+using System.IO.Pipelines;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rpfl.Server
+namespace Rpfl.Server.Applications
 {
-    [Service(ServiceLifetime.Singleton)]
-    public class DataConnectionService
+    /// <summary>
+    /// 传输通道服务
+    /// </summary>
+    sealed class TransportChannelService
     {
-        private uint _connectionId = 0;
-        private readonly TimeSpan timeout = TimeSpan.FromSeconds(20);
-        private readonly MainConnectionService mainConnectionService;
+        private uint _channelId = 0;
+        private readonly TimeSpan timeout = TimeSpan.FromSeconds(5d);
+        private readonly ConcurrentDictionary<uint, IAwaitableCompletionSource<Stream>> channelAwaiterTable = new();
 
-        private readonly ConcurrentDictionary<uint, IAwaitableCompletionSource<Stream>> connectionTable = new();
+        private readonly ConnectionService connectionService;
+        private readonly ILogger<TransportChannelService> logger;
 
-        public DataConnectionService(MainConnectionService mainConnectionService)
+        /// <summary>
+        /// 传输通道服务
+        /// </summary>
+        /// <param name="connectionService"></param>
+        /// <param name="logger"></param>
+        public TransportChannelService(
+            ConnectionService connectionService,
+            ILogger<TransportChannelService> logger)
         {
-            this.mainConnectionService = mainConnectionService;
+            this.connectionService = connectionService;
+            this.logger = logger;
         }
 
-        public async ValueTask<Stream> CreateConnectionAsync(SocketsHttpConnectionContext context, CancellationToken cancellation)
+        /// <summary>
+        /// 创建一个传输通道
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        public async ValueTask<Stream> CreateChannelAsync(SocketsHttpConnectionContext context, CancellationToken cancellation)
         {
-            var connectionId = Interlocked.Increment(ref this._connectionId);
-            using var source = AwaitableCompletionSource.Create<Stream>();
-            source.TrySetExceptionAfter(new Exception("创建连接超时"), this.timeout);
-            this.connectionTable.TryAdd(connectionId, source);
+            var channelId = Interlocked.Increment(ref this._channelId);
+            using var channelAwaiter = AwaitableCompletionSource.Create<Stream>();
+            channelAwaiter.TrySetExceptionAfter(new TimeoutException("创建传输通道超时"), this.timeout);
+            this.channelAwaiterTable.TryAdd(channelId, channelAwaiter);
 
             try
             {
-                var key = new HttpRequestOptionsKey<string>("Domain");
-                context.InitialRequestMessage.Options.TryGetValue<string>(key, out var domain);
-                await this.mainConnectionService.NotifyCreateDataConnectionAsync(domain!, connectionId, cancellation);
-                return await source.Task;
+                var key = new HttpRequestOptionsKey<string>("ClientDomain");
+                context.InitialRequestMessage.Options.TryGetValue<string>(key, out var clientDomain);
+                await this.connectionService.SendCreateTransportChannelAsync(clientDomain!, channelId, cancellation);
+                var channel = await channelAwaiter.Task;
+                this.logger.LogInformation($"创建{clientDomain}的传输通道{channelId}成功");
+                return channel;
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogWarning(ex.Message);
+                throw;
             }
             finally
             {
-                this.connectionTable.TryRemove(connectionId, out _);
+                this.channelAwaiterTable.TryRemove(channelId, out _);
             }
         }
 
+        /// <summary>
+        /// 收到连接
+        /// 从连接查找传输通道
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="next"></param>
+        /// <returns></returns>
         public async Task OnConnectedAsync(ConnectionContext context, Func<Task> next)
         {
             using var cancellationTokenSource = new CancellationTokenSource(this.timeout);
+            var cancellationToken = cancellationTokenSource.Token;
             var pipeReader = context.Transport.Input;
+            ReadResult result;
+            try
+            {
+                result = await pipeReader.ReadAsync(cancellationToken);
+            }
+            catch (Exception) when (cancellationToken.IsCancellationRequested)
+            {
+                await next();
+                return;
+            }
 
-            var result = await pipeReader.ReadAsync(cancellationTokenSource.Token);
             if (result.IsCanceled || result.IsCompleted)
             {
                 context.Abort();
                 return;
             }
 
-            if (TryReadConnectionId(result.Buffer, out var connectionId) == false ||
-                this.connectionTable.TryRemove(connectionId, out var streamAwaitable) == false)
+            if (TryReadChannelId(result.Buffer, out var connectionId) == false ||
+                this.channelAwaiterTable.TryRemove(connectionId, out var channelAwaiter) == false)
             {
                 pipeReader.AdvanceTo(result.Buffer.Start);
                 await next();
@@ -66,16 +108,23 @@ namespace Rpfl.Server
 
             var position = result.Buffer.GetPosition(sizeof(uint));
             pipeReader.AdvanceTo(position);
-            var duplexStream = new DuplexStream(context);
-            streamAwaitable.TrySetResult(duplexStream);
+            var channel = new TransportChannel(context);
+            channelAwaiter.TrySetResult(channel);
 
-            using var awaitable = AwaitableCompletionSource.Create<object?>();
-            context.ConnectionClosed.Register(state => ((IAwaitableCompletionSource)state!).TrySetResult(null), awaitable);
-            await awaitable.Task;
+            using var closedAwaiter = AwaitableCompletionSource.Create<object?>();
+            context.ConnectionClosed.Register(state => ((IAwaitableCompletionSource)state!).TrySetResult(null), closedAwaiter);
+            await closedAwaiter.Task;
             await context.DisposeAsync();
         }
 
-        private static bool TryReadConnectionId(ReadOnlySequence<byte> buffer, out uint value)
+
+        /// <summary>
+        /// 读取通道id
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private static bool TryReadChannelId(ReadOnlySequence<byte> buffer, out uint value)
         {
             var reader = new SequenceReader<byte>(buffer);
             if (reader.TryReadBigEndian(out int intValue))
@@ -88,13 +137,16 @@ namespace Rpfl.Server
         }
 
 
-        private class DuplexStream : Stream
+        /// <summary>
+        /// 传输通道
+        /// </summary>
+        private class TransportChannel : Stream
         {
             private readonly ConnectionContext context;
             private readonly Stream readStream;
             private readonly Stream wirteStream;
 
-            public DuplexStream(ConnectionContext context)
+            public TransportChannel(ConnectionContext context)
             {
                 this.context = context;
                 this.readStream = context.Transport.Input.AsStream();
@@ -125,7 +177,6 @@ namespace Rpfl.Server
                 return this.wirteStream.FlushAsync(cancellationToken);
             }
 
-
             public override long Seek(long offset, SeekOrigin origin)
             {
                 throw new NotSupportedException();
@@ -136,18 +187,14 @@ namespace Rpfl.Server
                 throw new NotSupportedException();
             }
 
-
             public override int Read(byte[] buffer, int offset, int count)
             {
                 return this.readStream.Read(buffer, offset, count);
             }
-
-
             public override void Write(byte[] buffer, int offset, int count)
             {
                 this.wirteStream.Write(buffer, offset, count);
             }
-
             public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
             {
                 return this.readStream.ReadAsync(buffer, cancellationToken);

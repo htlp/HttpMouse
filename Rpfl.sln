@@ -3,13 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31320.298
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpfl", "Rpfl\Rpfl.csproj", "{9100E2C8-26EB-4D06-AF75-E4AA0A2BA12F}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpfl.Server", "Rpfl.Server\Rpfl.Server.csproj", "{744A9A71-6ACE-4E9E-85E9-F24585708E7A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rpfl.Client", "Rpfl.Client\Rpfl.Client.csproj", "{6781D7C6-BCE8-4330-A474-57663AFEC18B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpfl.Client", "Rpfl.Client\Rpfl.Client.csproj", "{6781D7C6-BCE8-4330-A474-57663AFEC18B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rpfl.Client.App", "Rpfl.Client.App\Rpfl.Client.App.csproj", "{50ECEB6E-D47E-47CD-9DFE-D69B1123027E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpfl.Client.App", "Rpfl.Client.App\Rpfl.Client.App.csproj", "{50ECEB6E-D47E-47CD-9DFE-D69B1123027E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9100E2C8-26EB-4D06-AF75-E4AA0A2BA12F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9100E2C8-26EB-4D06-AF75-E4AA0A2BA12F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9100E2C8-26EB-4D06-AF75-E4AA0A2BA12F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9100E2C8-26EB-4D06-AF75-E4AA0A2BA12F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{744A9A71-6ACE-4E9E-85E9-F24585708E7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{744A9A71-6ACE-4E9E-85E9-F24585708E7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{744A9A71-6ACE-4E9E-85E9-F24585708E7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
