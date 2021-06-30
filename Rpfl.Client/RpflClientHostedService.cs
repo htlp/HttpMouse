@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
@@ -16,6 +15,7 @@ namespace Rpfl.Client
     {
         private readonly ILogger<RpflClientHostedService> logger;
         private readonly IOptions<RpflOptions> options;
+        private readonly byte[] channelIdBuffer = new byte[1024];
 
         public RpflClientHostedService(
             ILogger<RpflClientHostedService> logger,
@@ -29,12 +29,16 @@ namespace Rpfl.Client
         {
             while (stoppingToken.IsCancellationRequested == false)
             {
+                using var cancellationTokenSource = new CancellationTokenSource();
+
                 try
                 {
-                    await this.TransportAsync(stoppingToken);
+                    using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, cancellationTokenSource.Token);
+                    await this.TransportAsync(linkedTokenSource.Token);
                 }
                 catch (Exception ex)
                 {
+                    cancellationTokenSource.Cancel();
                     this.logger.LogWarning(ex.Message);
                     await Task.Delay(this.options.Value.ReconnectDueTime, stoppingToken);
                 }
@@ -49,26 +53,35 @@ namespace Rpfl.Client
             using var webSocket = new ClientWebSocket();
             webSocket.Options.SetRequestHeader("ClientDomain", this.options.Value.ClientDomain);
             webSocket.Options.SetRequestHeader("ClientUpStream", this.options.Value.ClientUpstream.ToString());
-
             await webSocket.ConnectAsync(builder.Uri, cancellationToken);
-            var buffer = new byte[8 * 1024];
+
+            using var cancellationTokenSource = new CancellationTokenSource();
+            using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cancellationTokenSource.Token);
+
+
             while (cancellationToken.IsCancellationRequested == false)
             {
-                var result = await webSocket.ReceiveAsync(buffer, cancellationToken);
+                var result = await webSocket.ReceiveAsync(this.channelIdBuffer, cancellationToken);
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
                     return;
                 }
 
-                var channelId = buffer.AsMemory(0, result.Count);
+                var channelId = this.channelIdBuffer.AsMemory(0, result.Count);
                 var server = await this.CreateServerChannelAsync(channelId, cancellationToken);
                 var client = await this.CreateClientChannelAsync(cancellationToken);
 
-                this.BindTransportAsync(server, client, cancellationToken);
+                this.BindChannelsAsync(server, client, linkedTokenSource.Token);
             }
         }
 
-        private async void BindTransportAsync(Stream server, Stream client, CancellationToken cancellationToken)
+        /// <summary>
+        /// 绑定传输通道
+        /// </summary>
+        /// <param name="server"></param>
+        /// <param name="client"></param>
+        /// <param name="cancellationToken"></param>
+        private async void BindChannelsAsync(Stream server, Stream client, CancellationToken cancellationToken)
         {
             try
             {
@@ -90,14 +103,10 @@ namespace Rpfl.Client
         private async Task<Stream> CreateServerChannelAsync(ReadOnlyMemory<byte> channelId, CancellationToken cancellationToken)
         {
             var server = this.options.Value.Server;
-            var addresses = await Dns.GetHostAddressesAsync(server.Host);
-            if (addresses.Length == 0)
-            {
-                throw new Exception("无法解析域名{server.Host}");
-            }
-            var endpoint = new IPEndPoint(addresses.Last(), server.Port);
+            var endpoint = new DnsEndPoint(server.Host, server.Port);
             var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(endpoint, cancellationToken);
+
             await socket.SendAsync(channelId, SocketFlags.None, cancellationToken);
             return new NetworkStream(socket, ownsSocket: true);
         }
@@ -105,17 +114,10 @@ namespace Rpfl.Client
         private async Task<Stream> CreateClientChannelAsync(CancellationToken cancellationToken)
         {
             var client = this.options.Value.ClientUpstream;
-
-
-            var addresses = await Dns.GetHostAddressesAsync(client.Host);
-            if (addresses.Length == 0)
-            {
-                throw new Exception("无法解析域名{server.Host}");
-            }
-            var endpoint = new IPEndPoint(addresses.Last(), client.Port);
-
+            var endpoint = new DnsEndPoint(client.Host, client.Port);
             var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(endpoint, cancellationToken);
+
             return new NetworkStream(socket, ownsSocket: true);
         }
     }
