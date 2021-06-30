@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -15,7 +16,7 @@ namespace Rpfl.Client
     {
         private readonly ILogger<RpflClientHostedService> logger;
         private readonly IOptions<RpflOptions> options;
-        private readonly byte[] channelIdBuffer = new byte[1024];
+        private readonly byte[] channelIdBuffer = new byte[sizeof(uint)];
 
         public RpflClientHostedService(
             ILogger<RpflClientHostedService> logger,
@@ -67,13 +68,11 @@ namespace Rpfl.Client
                     return;
                 }
 
-                var channelId = this.channelIdBuffer.AsMemory(0, result.Count);
-                var server = await this.CreateServerChannelAsync(channelId, cancellationToken);
-                var client = await this.CreateClientChannelAsync(cancellationToken);
-
-                this.BindChannelsAsync(server, client, linkedTokenSource.Token);
+                var channelId = BinaryPrimitives.ReadUInt32BigEndian(this.channelIdBuffer);
+                this.BindChannelsAsync(channelId, cancellationToken);
             }
         }
+
 
         /// <summary>
         /// 绑定传输通道
@@ -81,10 +80,20 @@ namespace Rpfl.Client
         /// <param name="server"></param>
         /// <param name="client"></param>
         /// <param name="cancellationToken"></param>
-        private async void BindChannelsAsync(Stream server, Stream client, CancellationToken cancellationToken)
+        private async void BindChannelsAsync(uint channelId, CancellationToken cancellationToken)
         {
+            await Task.Yield();
+
             try
             {
+                this.logger.LogInformation($"正在创建传输通道{channelId}");
+
+                var channelIdMemory = new byte[sizeof(uint)];
+                BinaryPrimitives.WriteUInt32BigEndian(channelIdMemory, channelId);
+                using var server = await this.CreateServerChannelAsync(channelIdMemory, cancellationToken);
+                using var client = await this.CreateClientChannelAsync(cancellationToken);
+                this.logger.LogInformation($"已创建好传输通道{channelId}");
+
                 this.logger.LogInformation("传输进行中");
                 var task1 = server.CopyToAsync(client, cancellationToken);
                 var task2 = client.CopyToAsync(server, cancellationToken);
@@ -94,8 +103,6 @@ namespace Rpfl.Client
             catch (Exception ex)
             {
                 this.logger.LogWarning($"传输结束：{ex.Message}");
-                await server.DisposeAsync();
-                await client.DisposeAsync();
             }
         }
 

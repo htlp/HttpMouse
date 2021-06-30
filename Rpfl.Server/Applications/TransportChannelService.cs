@@ -46,11 +46,12 @@ namespace Rpfl.Server.Applications
         {
             var channelId = Interlocked.Increment(ref this._channelId);
             using var channelAwaiter = AwaitableCompletionSource.Create<Stream>();
-            channelAwaiter.TrySetExceptionAfter(new TimeoutException("创建传输通道超时"), this.timeout);
+            channelAwaiter.TrySetExceptionAfter(new TimeoutException($"创建传输通道{channelId}超时"), this.timeout);
             this.channelAwaiterTable.TryAdd(channelId, channelAwaiter);
 
             try
             {
+                this.logger.LogInformation($"正在创建传输通道{channelId}");
                 var key = new HttpRequestOptionsKey<string>("ClientDomain");
                 context.InitialRequestMessage.Options.TryGetValue<string>(key, out var clientDomain);
                 await this.connectionService.SendCreateTransportChannelAsync(clientDomain!, channelId, cancellation);

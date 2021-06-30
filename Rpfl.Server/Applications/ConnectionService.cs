@@ -155,12 +155,13 @@ namespace Rpfl.Server.Applications
                 BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, channelId);
                 await connection.WebSocket.SendAsync(channelIdBuffer, WebSocketMessageType.Binary, true, cancellationToken);
             }
-            catch (Exception) when (connection.WebSocket.State != WebSocketState.Open)
+            catch when (connection.WebSocket.State != WebSocketState.Open)
             {
                 if (this.connections.TryRemove(clientDomain, out connection))
                 {
                     connection.WebSocket.Dispose();
                 }
+                throw;
             }
         }
     }
