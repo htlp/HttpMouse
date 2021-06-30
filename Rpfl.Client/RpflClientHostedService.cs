@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Connections;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.IO.Pipelines;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,12 +14,14 @@ namespace Rpfl.Client
 {
     sealed class RpflClientHostedService : BackgroundService
     {
-        private readonly IConnectionFactory connectionFactory;
+        private readonly ILogger<RpflClientHostedService> logger;
         private readonly IOptions<RpflOptions> options;
 
-        public RpflClientHostedService(IConnectionFactory connectionFactory, IOptions<RpflOptions> options)
+        public RpflClientHostedService(
+            ILogger<RpflClientHostedService> logger,
+            IOptions<RpflOptions> options)
         {
-            this.connectionFactory = connectionFactory;
+            this.logger = logger;
             this.options = options;
         }
 
@@ -32,7 +35,8 @@ namespace Rpfl.Client
                 }
                 catch (Exception ex)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(10d), stoppingToken);
+                    this.logger.LogWarning(ex.Message);
+                    await Task.Delay(this.options.Value.ReconnectDueTime, stoppingToken);
                 }
             }
         }
@@ -56,48 +60,34 @@ namespace Rpfl.Client
                     return;
                 }
 
-                var connectionId = buffer.AsMemory(0, result.Count);
-                var serverConnection = await this.CreateServerConnectionAsync(connectionId, cancellationToken);
-                var clientConnection = await this.CreateClientConnectionAsync(cancellationToken);
+                var channelId = buffer.AsMemory(0, result.Count);
+                var server = await this.CreateServerChannelAsync(channelId, cancellationToken);
+                var client = await this.CreateClientChannelAsync(cancellationToken);
 
-                DoTransportAsync(serverConnection, clientConnection, cancellationToken);
+                this.BindTransportAsync(server, client, cancellationToken);
             }
         }
 
-        private static async void DoTransportAsync(ConnectionContext server, ConnectionContext client, CancellationToken cancellationToken)
+        private async void BindTransportAsync(Stream server, Stream client, CancellationToken cancellationToken)
         {
-            await BindTransportAsync(server.Transport, client.Transport, cancellationToken);
-            await server.DisposeAsync();
-            await client.DisposeAsync();
-        }
-
-        private static Task BindTransportAsync(IDuplexPipe server, IDuplexPipe client, CancellationToken cancellationToken)
-        {
-            var task1 = ReadWriteAsync(server.Input, client.Output, cancellationToken);
-            var task2 = ReadWriteAsync(client.Input, server.Output, cancellationToken);
-            return Task.WhenAny(task1, task2);
-        }
-
-        private static async Task ReadWriteAsync(PipeReader reader, PipeWriter writer, CancellationToken cancellationToken)
-        {
-            while (cancellationToken.IsCancellationRequested == false)
+            try
             {
-                var result = await reader.ReadAsync(cancellationToken);
-                if (result.IsCanceled || result.IsCompleted)
-                {
-                    break;
-                }
-
-                foreach (var memory in result.Buffer)
-                {
-                    await writer.WriteAsync(memory, cancellationToken);
-                }
-
-                reader.AdvanceTo(result.Buffer.End);
+                this.logger.LogInformation("传输进行中");
+                var task1 = server.CopyToAsync(client, cancellationToken);
+                var task2 = client.CopyToAsync(server, cancellationToken);
+                await Task.WhenAny(task1, task2);
+                this.logger.LogWarning("传输结束");
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogWarning($"传输结束：{ex.Message}");
+                await server.DisposeAsync();
+                await client.DisposeAsync();
             }
         }
 
-        private async Task<ConnectionContext> CreateServerConnectionAsync(ReadOnlyMemory<byte> connectionId, CancellationToken cancellationToken)
+
+        private async Task<Stream> CreateServerChannelAsync(ReadOnlyMemory<byte> channelId, CancellationToken cancellationToken)
         {
             var server = this.options.Value.Server;
             var addresses = await Dns.GetHostAddressesAsync(server.Host);
@@ -106,21 +96,27 @@ namespace Rpfl.Client
                 throw new Exception("无法解析域名{server.Host}");
             }
             var endpoint = new IPEndPoint(addresses.Last(), server.Port);
-            var connection = await this.connectionFactory.ConnectAsync(endpoint, cancellationToken);
-            await connection.Transport.Output.WriteAsync(connectionId, cancellationToken);
-            return connection;
+            var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            await socket.ConnectAsync(endpoint, cancellationToken);
+            await socket.SendAsync(channelId, SocketFlags.None, cancellationToken);
+            return new NetworkStream(socket, ownsSocket: true);
         }
 
-        private async Task<ConnectionContext> CreateClientConnectionAsync(CancellationToken cancellationToken)
+        private async Task<Stream> CreateClientChannelAsync(CancellationToken cancellationToken)
         {
             var client = this.options.Value.ClientUpstream;
+
+
             var addresses = await Dns.GetHostAddressesAsync(client.Host);
             if (addresses.Length == 0)
             {
                 throw new Exception("无法解析域名{server.Host}");
             }
             var endpoint = new IPEndPoint(addresses.Last(), client.Port);
-            return await this.connectionFactory.ConnectAsync(endpoint, cancellationToken);
+
+            var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            await socket.ConnectAsync(endpoint, cancellationToken);
+            return new NetworkStream(socket, ownsSocket: true);
         }
     }
 }

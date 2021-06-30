@@ -13,5 +13,7 @@ namespace Rpfl.Client
 
         [AllowNull]
         public string ClientDomain { get; set; }
+
+        public TimeSpan ReconnectDueTime { get; set; } = TimeSpan.FromSeconds(10d);
     }
 }
