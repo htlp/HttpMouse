@@ -122,10 +122,6 @@ namespace Rpfl.Server.Applications
                     await webSocket.CloseAsync(WebSocketCloseStatus.Empty, description, cancellationToken);
                 }
             }
-            catch (Exception ex)
-            {
-                this.logger.LogWarning($"关闭websocket异常：{ex.Message}");
-            }
             finally
             {
                 webSocket.Dispose();
@@ -164,20 +160,9 @@ namespace Rpfl.Server.Applications
                 throw new Exception($"远程端{clientDomain}未连接");
             }
 
-            try
-            {
-                var channelIdBuffer = new byte[sizeof(uint)];
-                BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, channelId);
-                await connection.WebSocket.SendAsync(channelIdBuffer, WebSocketMessageType.Binary, true, cancellationToken);
-            }
-            catch when (connection.WebSocket.State != WebSocketState.Open)
-            {
-                if (this.connections.TryRemove(clientDomain, out connection))
-                {
-                    connection.WebSocket.Dispose();
-                }
-                throw;
-            }
+            var channelIdBuffer = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, channelId);
+            await connection.WebSocket.SendAsync(channelIdBuffer, WebSocketMessageType.Binary, true, cancellationToken);
         }
     }
 }
