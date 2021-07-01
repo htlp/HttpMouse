@@ -45,7 +45,7 @@ namespace Rpfl.Server
                     kestrel.Listen(https.IPAddress, https.Port, listen =>
                     {
                         listen.Use(transportService.OnConnectedAsync);
-                        listen.UseHttps(https.Certificate.Password, https.Certificate.Password);
+                        listen.UseHttps(https.Certificate.Path, https.Certificate.Password);
                     });
                 }
             });
