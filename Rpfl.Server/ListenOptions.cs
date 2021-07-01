@@ -8,6 +8,11 @@ namespace Rpfl.Server
     sealed class ListenOptions
     {
         /// <summary>
+        /// 密钥
+        /// </summary>
+        public string? Key { get; set; }
+
+        /// <summary>
         /// http
         /// </summary>
         public HttpEndPoint? Http { get; set; }
@@ -17,13 +22,15 @@ namespace Rpfl.Server
         /// </summary>
         public HttpsEndPoint? Https { get; set; }
 
-
+        /// <summary>
+        /// http节点
+        /// </summary>
         public class HttpEndPoint
         {
             /// <summary>
             /// ip地址
             /// </summary>
-            public IPAddress IPAddress { get; set; } = IPAddress.Any;
+            public IPAddress IPAddress { get; set; } = IPAddress.IPv6Any;
 
             /// <summary>
             /// 端口
@@ -31,6 +38,9 @@ namespace Rpfl.Server
             public virtual int Port { get; set; } = 80;
         }
 
+        /// <summary>
+        /// https节点
+        /// </summary>
         public class HttpsEndPoint : HttpEndPoint
         {
             /// <summary>
@@ -44,6 +54,9 @@ namespace Rpfl.Server
             public Certificate Certificate { get; set; } = new Certificate();
         }
 
+        /// <summary>
+        /// 证书
+        /// </summary>
         public class Certificate
         {
             /// <summary>

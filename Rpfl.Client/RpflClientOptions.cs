@@ -17,6 +17,11 @@ namespace Rpfl.Client
         public Uri Server { get; set; }
 
         /// <summary>
+        /// 服务器密钥
+        /// </summary>
+        public string? ServerKey { get; set; }
+
+        /// <summary>
         /// 客户端上游地址
         /// </summary>
         [AllowNull]
@@ -24,7 +29,7 @@ namespace Rpfl.Client
         public Uri ClientUpstream { get; set; }
 
         /// <summary>
-        /// 映射到客户端的域名
+        /// 映射到客户端的服务器域名或ip
         /// </summary>
         [AllowNull]
         [Required]

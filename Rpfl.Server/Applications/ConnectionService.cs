@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
@@ -15,11 +16,13 @@ namespace Rpfl.Server.Applications
     /// </summary> 
     sealed class ConnectionService
     {
+        private const string SERVER_KEY = "ServerKey";
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
 
-
+        private readonly IOptionsMonitor<ListenOptions> options;
         private readonly ILogger<ConnectionService> logger;
+
         private record Connection(Uri Upstream, WebSocket WebSocket);
         private readonly ConcurrentDictionary<string, Connection> connections = new();
 
@@ -27,26 +30,39 @@ namespace Rpfl.Server.Applications
         /// 主连接服务
         /// </summary>
         /// <param name="logger"></param>
-        public ConnectionService(ILogger<ConnectionService> logger)
+        public ConnectionService(
+            IOptionsMonitor<ListenOptions> options,
+            ILogger<ConnectionService> logger)
         {
+            this.options = options;
             this.logger = logger;
         }
 
         /// <summary>
-        /// 收到主连接时
+        /// 收到连接
         /// </summary>
         /// <param name="context"></param>
+        /// <param name="next"></param>
         /// <returns></returns>
-        public async Task OnConnectedAsync(HttpContext context)
+        public async Task OnConnectedAsync(HttpContext context, Func<Task> next)
         {
-            var cancellationToken = CancellationToken.None;
-            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-
-            if (context.Request.Headers.TryGetValue(CLIENT_DOMAIN, out var domainValues) == false ||
+            if (context.WebSockets.IsWebSocketRequest == false ||
+                context.Request.Headers.TryGetValue(SERVER_KEY, out var keyValues) == false ||
+                context.Request.Headers.TryGetValue(CLIENT_DOMAIN, out var domainValues) == false ||
                 context.Request.Headers.TryGetValue(CLIENT_UP_STREAM, out var upSteramValues) == false ||
                 Uri.TryCreate(upSteramValues.ToString(), UriKind.Absolute, out var clientUpstream) == false)
             {
-                var description = "无效的客户端标识";
+                await next();
+                return;
+            }
+
+            var key = this.options.CurrentValue.Key;
+            var cancellationToken = CancellationToken.None;
+            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+            if (string.IsNullOrEmpty(key) == false && key != keyValues.ToString())
+            {
+                var description = $"Key不正确";
                 await this.CloseWebSocketAsync(webSocket, description, cancellationToken);
                 return;
             }
@@ -61,7 +77,6 @@ namespace Rpfl.Server.Applications
 
             this.connections.TryAdd(clientDomain, new Connection(clientUpstream, webSocket));
             this.logger.LogInformation($"{clientDomain}连接过来");
-
             await this.WaitForCloseAsync(clientDomain, webSocket, cancellationToken);
         }
 
@@ -104,7 +119,7 @@ namespace Rpfl.Server.Applications
             {
                 if (webSocket.State == WebSocketState.Open)
                 {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.ProtocolError, description, cancellationToken);
+                    await webSocket.CloseAsync(WebSocketCloseStatus.Empty, description, cancellationToken);
                 }
             }
             catch (Exception ex)

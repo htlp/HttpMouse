@@ -34,24 +34,16 @@ namespace Rpfl.Server
         /// <summary>
         /// ≈‰÷√÷–º‰º˛
         /// </summary>
-        /// <param name="app"></param> 
+        /// <param name="app"></param>
         /// <param name="httpProxyService"></param>
-        public void Configure(IApplicationBuilder app, HttpProxyService httpProxyService)
+        /// <param name="connectionService"></param>
+        public void Configure(IApplicationBuilder app, HttpProxyService httpProxyService, ConnectionService connectionService)
         {
-            app.UseWebSockets();
-            app.Use(next => async context =>
-            {
-                if (context.WebSockets.IsWebSocketRequest == true)
-                {
-                    await context.RequestServices.GetRequiredService<ConnectionService>().OnConnectedAsync(context);
-                }
-                else
-                {
-                    await next(context);
-                }
-            });
-
             app.UseSerilogRequestLogging();
+
+            app.UseWebSockets();
+            app.Use(connectionService.OnConnectedAsync);
+             
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {

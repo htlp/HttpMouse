@@ -19,6 +19,7 @@ namespace Rpfl.Client
     {
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
+        private const string SERVER_KEY = "ServerKey";
 
         private readonly ILogger<RpflClient> logger;
         private readonly IOptions<RpflClientOptions> options;
@@ -72,6 +73,7 @@ namespace Rpfl.Client
 
             var webSocket = new ClientWebSocket();
             webSocket.Options.RemoteCertificateValidationCallback = delegate { return true; };
+            webSocket.Options.SetRequestHeader(SERVER_KEY, this.options.Value.ServerKey);
             webSocket.Options.SetRequestHeader(CLIENT_DOMAIN, this.options.Value.ClientDomain);
             webSocket.Options.SetRequestHeader(CLIENT_UP_STREAM, this.options.Value.ClientUpstream.ToString());
             await webSocket.ConnectAsync(uriBuilder.Uri, cancellationToken);
@@ -88,7 +90,7 @@ namespace Rpfl.Client
         {
             var result = await connection.ReceiveAsync(this.channelIdBuffer, cancellationToken);
             return result.MessageType == WebSocketMessageType.Close
-                ? throw new WebSocketException(WebSocketError.Faulted, "连接已断开")
+                ? throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription)
                 : BinaryPrimitives.ReadUInt32BigEndian(this.channelIdBuffer);
         }
 
