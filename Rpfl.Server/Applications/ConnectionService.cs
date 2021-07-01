@@ -76,7 +76,9 @@ namespace Rpfl.Server.Applications
 
             this.logger.LogInformation($"{connection}连接过来");
             await connection.WaitingCloseAsync();
+
             this.logger.LogInformation($"{connection}断开连接");
+            this.connections.TryRemove(clientDomain, out _);
         }
 
         /// <summary>

@@ -60,9 +60,17 @@ namespace Rpfl.Server.Applications
             var clientDomain = httpContext.Request.Host.Host;
             if (this.connectionService.TryGetClientUpStream(clientDomain, out var clientUpstream) == false)
             {
-                httpContext.Response.ContentType = "text/plain;charset=UTF-8";
+                var problem = new
+                {
+                    type = "http://www.restapitutorial.com/httpstatuscodes.html",
+                    title = "服务不可用",
+                    detail = "上游代理服务未连接",
+                    status = StatusCodes.Status503ServiceUnavailable,
+                    instance = $"{httpContext.Request.Path}{httpContext.Request.QueryString}"
+                };
+                httpContext.Response.ContentType = "application/problem+json";
                 httpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-                await httpContext.Response.WriteAsync("上游服务未连接");
+                await httpContext.Response.WriteAsJsonAsync(problem);
             }
             else
             {
