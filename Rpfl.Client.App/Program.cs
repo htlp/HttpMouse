@@ -25,7 +25,10 @@ namespace Rpfl.Client.App
                 .CreateDefaultBuilder(args)
                 .ConfigureServices((ctx, services) =>
                 {
-                    services.AddRpfl().Bind(ctx.Configuration.GetSection("Rpfl"));
+                    services
+                        .AddRpfl()
+                        .AddHostedService<RpflClientHostedService>()
+                        .AddOptions<RpflClientOptions>().Bind(ctx.Configuration.GetSection("Rpfl"));
                 });
         }
     }
