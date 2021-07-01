@@ -109,6 +109,7 @@ namespace Rpfl.Server.Applications
 
             var position = result.Buffer.GetPosition(sizeof(uint));
             pipeReader.AdvanceTo(position);
+
             var channel = new TransportChannel(context);
             channelAwaiter.TrySetResult(channel);
 

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -22,8 +23,6 @@ namespace Rpfl.Server.Applications
 
         private readonly IOptionsMonitor<ListenOptions> options;
         private readonly ILogger<ConnectionService> logger;
-
-        private record Connection(Uri Upstream, WebSocket WebSocket);
         private readonly ConcurrentDictionary<string, Connection> connections = new();
 
         /// <summary>
@@ -56,76 +55,28 @@ namespace Rpfl.Server.Applications
                 return;
             }
 
-            var key = this.options.CurrentValue.Key;
-            var cancellationToken = CancellationToken.None;
+            var clientDomain = domainValues.ToString();
             using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+            var connection = new Connection(clientDomain, clientUpstream, webSocket);
 
+            // 密钥验证
+            var key = this.options.CurrentValue.Key;
             if (string.IsNullOrEmpty(key) == false && key != keyValues.ToString())
             {
-                var description = $"Key不正确";
-                await this.CloseWebSocketAsync(webSocket, description, cancellationToken);
+                await connection.CloseAsync("Key不正确");
                 return;
             }
 
-            var clientDomain = domainValues.ToString();
-            if (this.connections.TryRemove(clientDomain, out var oldConnection))
+            // 验证连接唯一
+            if (this.connections.TryAdd(clientDomain, connection) == false)
             {
-                var description = $"{clientDomain}在新地方使用";
-                await this.CloseWebSocketAsync(oldConnection.WebSocket, description, cancellationToken);
+                await connection.CloseAsync($"已在其它地方存在{clientDomain}的连接实例");
                 return;
             }
 
-            this.connections.TryAdd(clientDomain, new Connection(clientUpstream, webSocket));
-            this.logger.LogInformation($"{clientDomain}连接过来");
-            await this.WaitForCloseAsync(clientDomain, webSocket, cancellationToken);
-        }
-
-        /// <summary>
-        /// 等待连接关闭
-        /// </summary>
-        /// <param name="clientDomain"></param>
-        /// <param name="webSocket"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private async Task WaitForCloseAsync(string clientDomain, WebSocket webSocket, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var buffer = new byte[4];
-                while (cancellationToken.IsCancellationRequested == false)
-                {
-                    await webSocket.ReceiveAsync(buffer, cancellationToken);
-                }
-            }
-            catch (Exception) when (webSocket.State != WebSocketState.Open)
-            {
-                if (this.connections.TryRemove(clientDomain, out var connection))
-                {
-                    connection.WebSocket.Dispose();
-                }
-            }
-        }
-
-        /// <summary>
-        /// 关闭websocket
-        /// </summary>
-        /// <param name="webSocket"></param>
-        /// <param name="description"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private async Task CloseWebSocketAsync(WebSocket webSocket, string description, CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (webSocket.State == WebSocketState.Open)
-                {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.Empty, description, cancellationToken);
-                }
-            }
-            finally
-            {
-                webSocket.Dispose();
-            }
+            this.logger.LogInformation($"{connection}连接过来");
+            await connection.WaitingCloseAsync();
+            this.logger.LogInformation($"{connection}断开连接");
         }
 
         /// <summary>
@@ -163,6 +114,71 @@ namespace Rpfl.Server.Applications
             var channelIdBuffer = new byte[sizeof(uint)];
             BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, channelId);
             await connection.WebSocket.SendAsync(channelIdBuffer, WebSocketMessageType.Binary, true, cancellationToken);
+        }
+
+        /// <summary>
+        /// 表示一个连接
+        /// </summary>
+        private class Connection
+        {
+            public string Domain { get; }
+
+            public Uri Upstream { get; }
+
+            public WebSocket WebSocket { get; }
+
+            public Connection(string domain, Uri Upstream, WebSocket WebSocket)
+            {
+                this.Domain = domain;
+                this.Upstream = Upstream;
+                this.WebSocket = WebSocket;
+            }
+
+            /// <summary>
+            /// 等待关闭
+            /// </summary>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
+            public async Task WaitingCloseAsync(CancellationToken cancellationToken = default)
+            {
+                var buffer = ArrayPool<byte>.Shared.Rent(4);
+                try
+                {
+                    while (cancellationToken.IsCancellationRequested == false)
+                    {
+                        await this.WebSocket.ReceiveAsync(buffer, cancellationToken);
+                    }
+                }
+                catch (Exception)
+                {
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                }
+            }
+
+            /// <summary>
+            /// 异常关闭
+            /// </summary> 
+            /// <param name="error"></param>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
+            public async Task CloseAsync(string error, CancellationToken cancellationToken = default)
+            {
+                try
+                {
+                    await this.WebSocket.CloseAsync(WebSocketCloseStatus.ProtocolError, error, cancellationToken);
+                }
+                catch
+                {
+                }
+            }
+
+            public override string ToString()
+            {
+                return $"{this.Domain}->{this.Upstream}";
+            }
         }
     }
 }
