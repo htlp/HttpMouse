@@ -4,6 +4,7 @@ using System;
 using System.Buffers.Binary;
 using System.IO;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Threading;
@@ -133,10 +134,19 @@ namespace Rpfl.Client
             var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(endpoint, cancellationToken);
 
+            Stream channel = new NetworkStream(socket, ownsSocket: true);
+            if (server.Scheme == Uri.UriSchemeHttps)
+            {
+                var sslChannel = new SslStream(channel, false, delegate { return true; });
+                await sslChannel.AuthenticateAsClientAsync(server.Host);
+                channel = sslChannel;
+            }
+
             var channelIdMemory = new byte[sizeof(uint)];
             BinaryPrimitives.WriteUInt32BigEndian(channelIdMemory, channelId);
-            await socket.SendAsync(channelIdMemory, SocketFlags.None, cancellationToken);
-            return new NetworkStream(socket, ownsSocket: true);
+            await channel.WriteAsync(channelIdMemory, cancellationToken);
+
+            return channel;
         }
 
         /// <summary>
