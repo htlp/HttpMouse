@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Security;
 using System.Threading.Tasks;
 using Yarp.ReverseProxy.Service.Proxy;
 
@@ -41,7 +42,11 @@ namespace Rpfl.Server.Applications
                 UseCookies = false,
                 AllowAutoRedirect = false,
                 AutomaticDecompression = DecompressionMethods.None,
-                ConnectCallback = transportChannelService.CreateChannelAsync
+                ConnectCallback = transportChannelService.CreateChannelAsync,
+                SslOptions = new SslClientAuthenticationOptions
+                {
+                    RemoteCertificateValidationCallback = delegate { return true; }
+                }
             });
         }
 

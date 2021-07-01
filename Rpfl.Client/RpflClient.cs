@@ -70,6 +70,7 @@ namespace Rpfl.Client
             uriBuilder.Scheme = uriBuilder.Scheme == Uri.UriSchemeHttp ? "ws" : "wss";
 
             var webSocket = new ClientWebSocket();
+            webSocket.Options.RemoteCertificateValidationCallback = delegate { return true; };
             webSocket.Options.SetRequestHeader(CLIENT_DOMAIN, this.options.Value.ClientDomain);
             webSocket.Options.SetRequestHeader(CLIENT_UP_STREAM, this.options.Value.ClientUpstream.ToString());
             await webSocket.ConnectAsync(uriBuilder.Uri, cancellationToken);
