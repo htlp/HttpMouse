@@ -29,7 +29,8 @@ namespace HttpMouse
                 .AddSingleton<TransportChannelService>();
 
             services
-                .AddOptions<HttpMouseOptions>().Bind(this.Configuration.GetSection("HttpMouse"));
+                .AddOptions<HttpMouseOptions>()
+                .Bind(this.Configuration.GetSection("HttpMouse"));
         }
 
         /// <summary>

@@ -29,7 +29,8 @@ namespace HttpMouse.ClientHost
                     services
                         .AddHttpMouseClient()
                         .AddHostedService<HttpMouseClientHostedService>()
-                        .AddOptions<HttpMouseClientOptions>().Bind(ctx.Configuration.GetSection("HttpMouse"));
+                        .AddOptions<HttpMouseClientOptions>()
+                        .Bind(ctx.Configuration.GetSection("HttpMouse"));
                 });
         }
     }

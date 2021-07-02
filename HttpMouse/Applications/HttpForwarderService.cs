@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Security;
@@ -74,8 +75,11 @@ namespace HttpMouse.Applications
             {
                 var serverError = this.options.CurrentValue.Error;
                 httpContext.Response.StatusCode = serverError.StatusCode;
-                httpContext.Response.ContentType = serverError.ContentType;
-                await httpContext.Response.SendFileAsync(serverError.ContentFile);
+                if (File.Exists(serverError.ContentFile) == true)
+                {
+                    httpContext.Response.ContentType = serverError.ContentType;
+                    await httpContext.Response.SendFileAsync(serverError.ContentFile);
+                }
             }
         }
 
