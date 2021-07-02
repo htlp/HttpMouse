@@ -1,0 +1,6 @@
+{
+  "type": "http://www.restapitutorial.com/httpstatuscodes.html",
+  "title": "服务不可用",
+  "detail": "代理的上游服务当前不可用",
+  "status": 503
+}

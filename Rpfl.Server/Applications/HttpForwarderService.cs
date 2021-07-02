@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Security;
@@ -16,6 +16,7 @@ namespace Rpfl.Server.Applications
     {
         private readonly IHttpForwarder httpForwarder;
         private readonly ConnectionService connectionService;
+        private readonly IOptionsMonitor<ServerOptions> options;
         private readonly HttpMessageInvoker httpClient;
         private readonly ForwarderRequestConfig forwarderRequestConfig = new();
 
@@ -28,10 +29,12 @@ namespace Rpfl.Server.Applications
         public HttpForwarderService(
             IHttpForwarder httpForwarder,
             ConnectionService connectionService,
-            TransportChannelService transportChannelService)
+            TransportChannelService transportChannelService,
+            IOptionsMonitor<ServerOptions> options)
         {
             this.httpForwarder = httpForwarder;
             this.connectionService = connectionService;
+            this.options = options;
             this.httpClient = CreateHttpClient(transportChannelService);
         }
 
@@ -56,47 +59,41 @@ namespace Rpfl.Server.Applications
         /// </summary>
         /// <param name="httpContext"></param>
         /// <returns></returns>
-        public async Task SendAsync(HttpContext httpContext, Func<Task> _)
+        public async Task SendAsync(HttpContext httpContext, Func<Task> next)
         {
+            var error = ForwarderError.NoAvailableDestinations;
             var clientDomain = httpContext.Request.Host.Host;
-            if (this.connectionService.TryGetClientUpStream(clientDomain, out var clientUpstream) == false)
-            {
-                var problem = new
-                {
-                    type = "http://www.restapitutorial.com/httpstatuscodes.html",
-                    title = "服务不可用",
-                    detail = "上游代理服务未连接",
-                    status = StatusCodes.Status503ServiceUnavailable,
-                    instance = $"{httpContext.Request.Path}{httpContext.Request.QueryString}"
-                };
-                httpContext.Response.ContentType = "application/problem+json";
-                httpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-                await httpContext.Response.WriteAsJsonAsync(problem);
-            }
-            else
+            if (this.connectionService.TryGetClientUpStream(clientDomain, out var clientUpstream))
             {
                 var destPrefix = clientUpstream.ToString();
-                var transformer = new HostTransformer(clientUpstream.Host, clientDomain);
-                await this.httpForwarder.SendAsync(httpContext, destPrefix, httpClient, this.forwarderRequestConfig, transformer);
+                var transformer = new OptionsTransformer(clientDomain);
+                error = await this.httpForwarder.SendAsync(httpContext, destPrefix, httpClient, this.forwarderRequestConfig, transformer);
+            }
+
+            if (error != ForwarderError.None)
+            {
+                var serverError = this.options.CurrentValue.Error;
+                httpContext.Response.StatusCode = serverError.StatusCode;
+                httpContext.Response.ContentType = serverError.ContentType;
+                await httpContext.Response.SendFileAsync(serverError.ContentFile);
             }
         }
 
-        private class HostTransformer : HttpTransformer
+        private class OptionsTransformer : HttpTransformer
         {
-            private readonly string requestHost;
             private readonly string clientDomain;
+            private static readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
 
-            public HostTransformer(string requestHost, string clientDomain)
+            public OptionsTransformer(string clientDomain)
             {
-                this.requestHost = requestHost;
                 this.clientDomain = clientDomain;
             }
 
             public override async ValueTask TransformRequestAsync(HttpContext httpContext, HttpRequestMessage proxyRequest, string destinationPrefix)
             {
                 await base.TransformRequestAsync(httpContext, proxyRequest, destinationPrefix);
-                proxyRequest.Headers.Host = this.requestHost;
-                proxyRequest.Options.TryAdd("ClientDomain", this.clientDomain);
+                proxyRequest.Headers.Host = null;
+                proxyRequest.Options.Set(clientDomainKey, this.clientDomain);
             }
         }
     }

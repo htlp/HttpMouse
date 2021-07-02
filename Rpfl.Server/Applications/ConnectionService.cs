@@ -21,7 +21,7 @@ namespace Rpfl.Server.Applications
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
 
-        private readonly IOptionsMonitor<ListenOptions> options;
+        private readonly IOptionsMonitor<ServerOptions> options;
         private readonly ILogger<ConnectionService> logger;
         private readonly ConcurrentDictionary<string, Connection> connections = new();
 
@@ -30,7 +30,7 @@ namespace Rpfl.Server.Applications
         /// </summary>
         /// <param name="logger"></param>
         public ConnectionService(
-            IOptionsMonitor<ListenOptions> options,
+            IOptionsMonitor<ServerOptions> options,
             ILogger<ConnectionService> logger)
         {
             this.options = options;

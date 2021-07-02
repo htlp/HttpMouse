@@ -29,9 +29,9 @@ namespace Rpfl.Server
             return hostBuilder.UseKestrel(kestrel =>
             {
                 var transportService = kestrel.ApplicationServices.GetRequiredService<TransportChannelService>();
-                var options = kestrel.ApplicationServices.GetRequiredService<IOptions<ListenOptions>>().Value;
+                var options = kestrel.ApplicationServices.GetRequiredService<IOptions<ServerOptions>>().Value;
 
-                var http = options.Http;
+                var http = options.Listen.Http;
                 if (http != null)
                 {
                     kestrel.Listen(http.IPAddress, http.Port, listen =>
@@ -40,7 +40,7 @@ namespace Rpfl.Server
                     });
                 }
 
-                var https = options.Https;
+                var https = options.Listen.Https;
                 if (https != null && File.Exists(https.Certificate.Path))
                 {
                     kestrel.Listen(https.IPAddress, https.Port, listen =>

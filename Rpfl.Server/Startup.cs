@@ -29,7 +29,7 @@ namespace Rpfl.Server
                 .AddSingleton<TransportChannelService>();
 
             services
-                .AddOptions<ListenOptions>().Bind(this.Configuration.GetSection("Listen"));
+                .AddOptions<ServerOptions>().Bind(this.Configuration.GetSection("Server"));
         }
 
         /// <summary>

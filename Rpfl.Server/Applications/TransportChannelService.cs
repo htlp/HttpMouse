@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,6 +18,7 @@ namespace Rpfl.Server.Applications
     sealed class TransportChannelService
     {
         private uint _channelId = 0;
+        private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
         private readonly TimeSpan timeout = TimeSpan.FromSeconds(10d);
         private readonly ConcurrentDictionary<uint, IAwaitableCompletionSource<Stream>> channelAwaiterTable = new();
 
@@ -44,6 +46,11 @@ namespace Rpfl.Server.Applications
         /// <returns></returns>
         public async ValueTask<Stream> CreateChannelAsync(SocketsHttpConnectionContext context, CancellationToken cancellation)
         {
+            if (context.InitialRequestMessage.Options.TryGetValue(clientDomainKey, out var clientDomain) == false)
+            {
+                throw new InvalidOperationException("无法创建通道：未知道目标域名");
+            }
+
             var channelId = Interlocked.Increment(ref this._channelId);
             using var channelAwaiter = AwaitableCompletionSource.Create<Stream>();
             channelAwaiter.TrySetExceptionAfter(new TimeoutException($"创建传输通道{channelId}超时"), this.timeout);
@@ -52,11 +59,10 @@ namespace Rpfl.Server.Applications
             try
             {
                 this.logger.LogInformation($"正在创建传输通道{channelId}");
-                var key = new HttpRequestOptionsKey<string>("ClientDomain");
-                context.InitialRequestMessage.Options.TryGetValue<string>(key, out var clientDomain);
-                await this.connectionService.SendCreateTransportChannelAsync(clientDomain!, channelId, cancellation);
+                await this.connectionService.SendCreateTransportChannelAsync(clientDomain, channelId, cancellation);
                 var channel = await channelAwaiter.Task;
-                this.logger.LogInformation($"创建{clientDomain}的传输通道{channelId}成功");
+
+                this.logger.LogInformation($"创建传输通道{channelId}成功");
                 return channel;
             }
             catch (Exception ex)
