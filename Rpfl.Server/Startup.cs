@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Rpfl.Server.Applications;
-using Serilog;
 
 namespace Rpfl.Server
 {
@@ -39,16 +38,9 @@ namespace Rpfl.Server
         /// <param name="connectionService"></param>
         public void Configure(IApplicationBuilder app, HttpProxyService httpProxyService, ConnectionService connectionService)
         {
-            app.UseSerilogRequestLogging();
-
             app.UseWebSockets();
             app.Use(connectionService.OnConnectedAsync);
-             
-            app.UseRouting();
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.Map("/{**catch-all}", httpProxyService.ProxyAsync);
-            });
+            app.Use(httpProxyService.ProxyAsync);
         }
     }
 }

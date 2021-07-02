@@ -17,7 +17,7 @@ namespace Rpfl.Server.Applications
     sealed class TransportChannelService
     {
         private uint _channelId = 0;
-        private readonly TimeSpan timeout = TimeSpan.FromSeconds(5d);
+        private readonly TimeSpan timeout = TimeSpan.FromSeconds(10d);
         private readonly ConcurrentDictionary<uint, IAwaitableCompletionSource<Stream>> channelAwaiterTable = new();
 
         private readonly ConnectionService connectionService;

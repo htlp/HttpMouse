@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -55,7 +56,7 @@ namespace Rpfl.Server.Applications
         /// </summary>
         /// <param name="httpContext"></param>
         /// <returns></returns>
-        public async Task ProxyAsync(HttpContext httpContext)
+        public async Task ProxyAsync(HttpContext httpContext, Func<Task> _)
         {
             var clientDomain = httpContext.Request.Host.Host;
             if (this.connectionService.TryGetClientUpStream(clientDomain, out var clientUpstream) == false)
