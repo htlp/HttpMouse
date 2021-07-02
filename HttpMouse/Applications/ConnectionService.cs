@@ -10,7 +10,7 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rpfl.Server.Applications
+namespace HttpMouse.Applications
 {
     /// <summary>
     /// 主连接服务
@@ -21,7 +21,7 @@ namespace Rpfl.Server.Applications
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
 
-        private readonly IOptionsMonitor<ServerOptions> options;
+        private readonly IOptionsMonitor<HttpMouseOptions> options;
         private readonly ILogger<ConnectionService> logger;
         private readonly ConcurrentDictionary<string, Connection> connections = new();
 
@@ -30,7 +30,7 @@ namespace Rpfl.Server.Applications
         /// </summary>
         /// <param name="logger"></param>
         public ConnectionService(
-            IOptionsMonitor<ServerOptions> options,
+            IOptionsMonitor<HttpMouseOptions> options,
             ILogger<ConnectionService> logger)
         {
             this.options = options;

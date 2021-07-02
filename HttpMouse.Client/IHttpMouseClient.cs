@@ -1,12 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rpfl.Client
+namespace HttpMouse.Client
 {
     /// <summary>
     /// 客户端接口
     /// </summary>
-    public interface IRpflClient
+    public interface IHttpMouseClient
     {
         /// <summary>
         /// 传输数据

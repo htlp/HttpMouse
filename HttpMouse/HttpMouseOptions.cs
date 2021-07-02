@@ -1,8 +1,8 @@
 ﻿using System.Net;
 
-namespace Rpfl.Server
+namespace HttpMouse
 {
-    sealed class ServerOptions
+    sealed class HttpMouseOptions
     {
         /// <summary>
         /// 密钥

@@ -10,24 +10,24 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rpfl.Client
+namespace HttpMouse.Client
 {
     /// <summary>
     /// 客户端
     /// </summary>
-    sealed class RpflClient : IRpflClient
+    sealed class HttpMouseClient : IHttpMouseClient
     {
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
         private const string SERVER_KEY = "ServerKey";
 
-        private readonly ILogger<RpflClient> logger;
-        private readonly IOptions<RpflClientOptions> options;
+        private readonly ILogger<HttpMouseClient> logger;
+        private readonly IOptions<HttpMouseClientOptions> options;
         private readonly byte[] channelIdBuffer = new byte[sizeof(uint)];
 
-        public RpflClient(
-            ILogger<RpflClient> logger,
-            IOptions<RpflClientOptions> options)
+        public HttpMouseClient(
+            ILogger<HttpMouseClient> logger,
+            IOptions<HttpMouseClientOptions> options)
         {
             this.logger = logger;
             this.options = options;

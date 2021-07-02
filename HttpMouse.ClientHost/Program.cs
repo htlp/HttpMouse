@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using HttpMouse.Client;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Rpfl.Client.App
+namespace HttpMouse.ClientHost
 {
     class Program
     {
@@ -26,9 +27,9 @@ namespace Rpfl.Client.App
                 .ConfigureServices((ctx, services) =>
                 {
                     services
-                        .AddRpfl()
-                        .AddHostedService<RpflClientHostedService>()
-                        .AddOptions<RpflClientOptions>().Bind(ctx.Configuration.GetSection("Rpfl"));
+                        .AddHttpMouseClient()
+                        .AddHostedService<HttpMouseClientHostedService>()
+                        .AddOptions<HttpMouseClientOptions>().Bind(ctx.Configuration.GetSection("HttpMouse"));
                 });
         }
     }

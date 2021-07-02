@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Rpfl.Server
+namespace HttpMouse
 {
     class Program
     {

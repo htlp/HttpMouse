@@ -6,11 +6,10 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rpfl.Server.Applications
+namespace HttpMouse.Applications
 {
     /// <summary>
     /// 传输通道服务

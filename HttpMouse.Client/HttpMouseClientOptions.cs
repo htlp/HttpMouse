@@ -2,12 +2,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Rpfl.Client
+namespace HttpMouse.Client
 {
     /// <summary>
     /// 客户端选项
     /// </summary>
-    public class RpflClientOptions
+    public class HttpMouseClientOptions
     {
         /// <summary>
         /// 服务器地址

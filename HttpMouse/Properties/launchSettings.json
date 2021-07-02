@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Rpfl.Server": {
+    "HttpMouse": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Rpfl.Server.Applications;
+using HttpMouse.Applications;
 using Serilog;
 using System.IO;
 
-namespace Rpfl.Server
+namespace HttpMouse
 {
     static class HostBuilderExtensions
     {
@@ -29,7 +29,7 @@ namespace Rpfl.Server
             return hostBuilder.UseKestrel(kestrel =>
             {
                 var transportService = kestrel.ApplicationServices.GetRequiredService<TransportChannelService>();
-                var options = kestrel.ApplicationServices.GetRequiredService<IOptions<ServerOptions>>().Value;
+                var options = kestrel.ApplicationServices.GetRequiredService<IOptions<HttpMouseOptions>>().Value;
 
                 var http = options.Listen.Http;
                 if (http != null)

@@ -7,7 +7,7 @@ using System.Net.Security;
 using System.Threading.Tasks;
 using Yarp.ReverseProxy.Forwarder;
 
-namespace Rpfl.Server.Applications
+namespace HttpMouse.Applications
 {
     /// <summary>
     /// http反向代理服务
@@ -16,7 +16,7 @@ namespace Rpfl.Server.Applications
     {
         private readonly IHttpForwarder httpForwarder;
         private readonly ConnectionService connectionService;
-        private readonly IOptionsMonitor<ServerOptions> options;
+        private readonly IOptionsMonitor<HttpMouseOptions> options;
         private readonly HttpMessageInvoker httpClient;
         private readonly ForwarderRequestConfig forwarderRequestConfig = new();
 
@@ -30,7 +30,7 @@ namespace Rpfl.Server.Applications
             IHttpForwarder httpForwarder,
             ConnectionService connectionService,
             TransportChannelService transportChannelService,
-            IOptionsMonitor<ServerOptions> options)
+            IOptionsMonitor<HttpMouseOptions> options)
         {
             this.httpForwarder = httpForwarder;
             this.connectionService = connectionService;

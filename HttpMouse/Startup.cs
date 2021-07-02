@@ -1,11 +1,11 @@
+using HttpMouse.Applications;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Rpfl.Server.Applications;
 using Serilog;
 
-namespace Rpfl.Server
+namespace HttpMouse
 {
     sealed class Startup
     {
@@ -29,7 +29,7 @@ namespace Rpfl.Server
                 .AddSingleton<TransportChannelService>();
 
             services
-                .AddOptions<ServerOptions>().Bind(this.Configuration.GetSection("Server"));
+                .AddOptions<HttpMouseOptions>().Bind(this.Configuration.GetSection("HttpMouse"));
         }
 
         /// <summary>

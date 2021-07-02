@@ -1,21 +1,22 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using HttpMouse.Client;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rpfl.Client.App
+namespace HttpMouse.ClientHost
 {
-    sealed class RpflClientHostedService : BackgroundService
+    sealed class HttpMouseClientHostedService : BackgroundService
     {
-        private readonly IRpflClient rpflClient;
-        private readonly ILogger<RpflClientHostedService> logger;
+        private readonly IHttpMouseClient httpMouseClient;
+        private readonly ILogger<HttpMouseClientHostedService> logger;
 
-        public RpflClientHostedService(
-            IRpflClient rpflClient,
-            ILogger<RpflClientHostedService> logger)
+        public HttpMouseClientHostedService(
+            IHttpMouseClient httpMouseClient,
+            ILogger<HttpMouseClientHostedService> logger)
         {
-            this.rpflClient = rpflClient;
+            this.httpMouseClient = httpMouseClient;
             this.logger = logger;
         }
 
@@ -26,7 +27,7 @@ namespace Rpfl.Client.App
                 try
                 {
                     this.logger.LogInformation("传输ing..");
-                    await this.rpflClient.TransportAsync(stoppingToken);
+                    await this.httpMouseClient.TransportAsync(stoppingToken);
                 }
                 catch (Exception ex)
                 {
