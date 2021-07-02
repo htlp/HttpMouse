@@ -5,32 +5,32 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Security;
 using System.Threading.Tasks;
-using Yarp.ReverseProxy.Service.Proxy;
+using Yarp.ReverseProxy.Forwarder;
 
 namespace Rpfl.Server.Applications
 {
     /// <summary>
     /// http反向代理服务
     /// </summary>
-    sealed class HttpProxyService
+    sealed class HttpForwarderService
     {
-        private readonly IHttpProxy httpProxy;
+        private readonly IHttpForwarder httpForwarder;
         private readonly ConnectionService connectionService;
         private readonly HttpMessageInvoker httpClient;
-        private readonly RequestProxyOptions requestProxyOptions = new();
+        private readonly ForwarderRequestConfig forwarderRequestConfig = new();
 
         /// <summary>
         /// http反向代理服务
         /// </summary>
-        /// <param name="httpProxy"></param>
+        /// <param name="httpForwarder"></param>
         /// <param name="connectionService"></param>
         /// <param name="transportChannelService"></param>
-        public HttpProxyService(
-            IHttpProxy httpProxy,
+        public HttpForwarderService(
+            IHttpForwarder httpForwarder,
             ConnectionService connectionService,
             TransportChannelService transportChannelService)
         {
-            this.httpProxy = httpProxy;
+            this.httpForwarder = httpForwarder;
             this.connectionService = connectionService;
             this.httpClient = CreateHttpClient(transportChannelService);
         }
@@ -52,11 +52,11 @@ namespace Rpfl.Server.Applications
         }
 
         /// <summary>
-        /// http代理
+        /// 发送http数据
         /// </summary>
         /// <param name="httpContext"></param>
         /// <returns></returns>
-        public async Task ProxyAsync(HttpContext httpContext, Func<Task> _)
+        public async Task SendAsync(HttpContext httpContext, Func<Task> _)
         {
             var clientDomain = httpContext.Request.Host.Host;
             if (this.connectionService.TryGetClientUpStream(clientDomain, out var clientUpstream) == false)
@@ -77,7 +77,7 @@ namespace Rpfl.Server.Applications
             {
                 var destPrefix = clientUpstream.ToString();
                 var transformer = new HostTransformer(clientUpstream.Host, clientDomain);
-                await this.httpProxy.ProxyAsync(httpContext, destPrefix, httpClient, this.requestProxyOptions, transformer);
+                await this.httpForwarder.SendAsync(httpContext, destPrefix, httpClient, this.forwarderRequestConfig, transformer);
             }
         }
 

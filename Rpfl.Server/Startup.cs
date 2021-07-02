@@ -21,8 +21,8 @@ namespace Rpfl.Server
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddHttpProxy()
-                .AddSingleton<HttpProxyService>()
+                .AddHttpForwarder()
+                .AddSingleton<HttpForwarderService>()
                 .AddSingleton<ConnectionService>()
                 .AddSingleton<TransportChannelService>();
 
@@ -34,13 +34,13 @@ namespace Rpfl.Server
         /// ≈‰÷√÷–º‰º˛
         /// </summary>
         /// <param name="app"></param>
-        /// <param name="httpProxyService"></param>
         /// <param name="connectionService"></param>
-        public void Configure(IApplicationBuilder app, HttpProxyService httpProxyService, ConnectionService connectionService)
+        /// <param name="httpForwarderService"></param> 
+        public void Configure(IApplicationBuilder app, ConnectionService connectionService, HttpForwarderService httpForwarderService)
         {
             app.UseWebSockets();
             app.Use(connectionService.OnConnectedAsync);
-            app.Use(httpProxyService.ProxyAsync);
+            app.Use(httpForwarderService.SendAsync);
         }
     }
 }
