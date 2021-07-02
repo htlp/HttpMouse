@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -44,6 +45,7 @@ namespace Rpfl.Server
                 {
                     kestrel.Listen(https.IPAddress, https.Port, listen =>
                     {
+                        listen.Protocols = HttpProtocols.Http1AndHttp2;
                         listen.UseHttps(https.Certificate.Path, https.Certificate.Password);
                         listen.Use(transportService.OnConnectedAsync);
                     });
