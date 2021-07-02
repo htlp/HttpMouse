@@ -41,7 +41,7 @@ namespace Rpfl.Server
                 }
 
                 var https = options.Https;
-                if (https != null)
+                if (https != null && File.Exists(https.Certificate.Path))
                 {
                     kestrel.Listen(https.IPAddress, https.Port, listen =>
                     {

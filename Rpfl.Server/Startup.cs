@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Rpfl.Server.Applications;
+using Serilog;
 
 namespace Rpfl.Server
 {
@@ -36,8 +38,13 @@ namespace Rpfl.Server
         /// <param name="app"></param>
         /// <param name="connectionService"></param>
         /// <param name="httpForwarderService"></param> 
-        public void Configure(IApplicationBuilder app, ConnectionService connectionService, HttpForwarderService httpForwarderService)
+        public void Configure(IApplicationBuilder app, IHostEnvironment hostEnvironment, ConnectionService connectionService, HttpForwarderService httpForwarderService)
         {
+            if (hostEnvironment.IsDevelopment())
+            {
+                app.UseSerilogRequestLogging();
+            }
+
             app.UseWebSockets();
             app.Use(connectionService.OnConnectedAsync);
             app.Use(httpForwarderService.SendAsync);
