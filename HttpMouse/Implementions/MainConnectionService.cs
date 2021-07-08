@@ -2,19 +2,17 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Net.WebSockets;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 
-namespace HttpMouse.Connections
+namespace HttpMouse.Implementions
 {
     /// <summary>
     /// 主连接服务
     /// </summary> 
-    sealed class MainConnectionService
+    sealed class MainConnectionService : IMainConnectionService
     {
         private const string SERVER_KEY = "ServerKey";
         private const string CLIENT_DOMAIN = "ClientDomain";
@@ -22,7 +20,13 @@ namespace HttpMouse.Connections
 
         private readonly IOptionsMonitor<HttpMouseOptions> options;
         private readonly ILogger<MainConnectionService> logger;
-        private readonly ConcurrentDictionary<string, MainConnection> connections = new();
+        private readonly ConcurrentDictionary<string, IMainConnection> connections = new();
+
+
+        /// <summary>
+        /// 主连接变化后
+        /// </summary>
+        public event Action<IMainConnection[]>? ConnectionChanged;
 
         /// <summary>
         /// 主连接服务
@@ -37,12 +41,23 @@ namespace HttpMouse.Connections
         }
 
         /// <summary>
-        /// 收到连接
+        /// 尝试获取连接 
+        /// </summary>
+        /// <param name="clientDomain"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public bool TryGetValue(string clientDomain, [MaybeNullWhen(false)] out IMainConnection value)
+        {
+            return this.connections.TryGetValue(clientDomain, out value);
+        }
+
+        /// <summary>
+        /// 处理连接
         /// </summary>
         /// <param name="context"></param>
         /// <param name="next"></param>
         /// <returns></returns>
-        public async Task OnConnectedAsync(HttpContext context, Func<Task> next)
+        public async Task HandleConnectionAsync(HttpContext context, Func<Task> next)
         {
             if (context.WebSockets.IsWebSocketRequest == false ||
                 context.Request.Headers.TryGetValue(SERVER_KEY, out var keyValues) == false ||
@@ -56,7 +71,7 @@ namespace HttpMouse.Connections
 
             var clientDomain = domainValues.ToString();
             using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-            var connection = new MainConnection(clientDomain, clientUpstream, webSocket);
+            var connection = new MainConnection(clientDomain, clientUpstream, webSocket, this.options);
 
             // 密钥验证
             var key = this.options.CurrentValue.Key;
@@ -73,48 +88,15 @@ namespace HttpMouse.Connections
                 return;
             }
 
+
             this.logger.LogInformation($"{connection}连接过来");
+            this.ConnectionChanged?.Invoke(this.connections.Values.ToArray());
+
             await connection.WaitingCloseAsync();
 
             this.logger.LogInformation($"{connection}断开连接");
             this.connections.TryRemove(clientDomain, out _);
-        }
-
-        /// <summary>
-        /// 获取客户端上游地址
-        /// </summary>
-        /// <param name="clientDomain"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public bool TryGetClientUpStream(string clientDomain, [MaybeNullWhen(false)] out Uri value)
-        {
-            if (this.connections.TryGetValue(clientDomain, out var connection))
-            {
-                value = connection.Upstream;
-                return true;
-            }
-
-            value = default;
-            return false;
-        }
-
-        /// <summary>
-        /// 发送创建传输通道命令
-        /// </summary>
-        /// <param name="clientDomain"></param>
-        /// <param name="channelId"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public async Task SendCreateTransportChannelAsync(string clientDomain, uint channelId, CancellationToken cancellationToken)
-        {
-            if (this.connections.TryGetValue(clientDomain, out var connection) == false)
-            {
-                throw new Exception($"远程端{clientDomain}未连接");
-            }
-
-            var channelIdBuffer = new byte[sizeof(uint)];
-            BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, channelId);
-            await connection.WebSocket.SendAsync(channelIdBuffer, WebSocketMessageType.Binary, true, cancellationToken);
+            this.ConnectionChanged?.Invoke(this.connections.Values.ToArray());
         }
     }
 }

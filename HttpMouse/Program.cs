@@ -18,7 +18,7 @@ namespace HttpMouse
                 .UseFileConsoleSerilog()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>().UseKestrelTransportChannel();
+                    webBuilder.UseStartup<Startup>().UseKestrelReverseConnection();
                 });
         }
     }

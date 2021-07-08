@@ -24,7 +24,7 @@ namespace HttpMouse
         /// <summary>
         /// 错误返回
         /// </summary>
-        public ServerError Error { get; set; } = new ServerError();
+        public ServerFallback Fallback { get; set; } = new ServerFallback();
 
         /// <summary>
         /// 监听选项
@@ -91,9 +91,9 @@ namespace HttpMouse
         }
 
         /// <summary>
-        /// 错误返回
+        /// 错误回退
         /// </summary>
-        public class ServerError
+        public class ServerFallback
         {
             /// <summary>
             /// 状态码
@@ -108,7 +108,7 @@ namespace HttpMouse
             /// <summary>
             /// 内容文件路径 
             /// </summary>
-            public string ContentFile { get; set; } = "problem.json";
+            public string ContentFile { get; set; } = "fallback.json";
         }
     }
 }

@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using HttpMouse.Connections;
 using Serilog;
 using System.IO;
 
@@ -24,11 +23,11 @@ namespace HttpMouse
             });
         }
 
-        public static IWebHostBuilder UseKestrelTransportChannel(this IWebHostBuilder hostBuilder)
+        public static IWebHostBuilder UseKestrelReverseConnection(this IWebHostBuilder hostBuilder)
         {
             return hostBuilder.UseKestrel(kestrel =>
             {
-                var reverseConnectionService = kestrel.ApplicationServices.GetRequiredService<ReverseConnectionService>();
+                var reverseConnectionService = kestrel.ApplicationServices.GetRequiredService<IReverseConnectionService>();
                 var options = kestrel.ApplicationServices.GetRequiredService<IOptions<HttpMouseOptions>>().Value;
 
                 var http = options.Listen.Http;
@@ -36,7 +35,7 @@ namespace HttpMouse
                 {
                     kestrel.Listen(http.IPAddress, http.Port, listen =>
                     {
-                        listen.Use(reverseConnectionService.OnKestrelConnectedAsync);
+                        listen.Use(reverseConnectionService.HandleKestrelConnectionAsync);
                     });
                 }
 
@@ -47,7 +46,7 @@ namespace HttpMouse
                     {
                         listen.Protocols = HttpProtocols.Http1AndHttp2;
                         listen.UseHttps(https.Certificate.Path, https.Certificate.Password);
-                        listen.Use(reverseConnectionService.OnKestrelConnectedAsync);
+                        listen.Use(reverseConnectionService.HandleKestrelConnectionAsync);
                     });
                 }
             });

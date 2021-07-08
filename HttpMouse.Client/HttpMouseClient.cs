@@ -23,7 +23,7 @@ namespace HttpMouse.Client
 
         private readonly ILogger<HttpMouseClient> logger;
         private readonly IOptions<HttpMouseClientOptions> options;
-        private readonly byte[] channelIdBuffer = new byte[sizeof(uint)];
+        private readonly byte[] connectionIdBuffer = new byte[sizeof(uint)];
 
         public HttpMouseClient(
             ILogger<HttpMouseClient> logger,
@@ -46,12 +46,12 @@ namespace HttpMouse.Client
             try
             {
                 var cancellationToken = linkedTokenSource.Token;
-                using var connection = await this.CreateConnectionAsync(cancellationToken);
+                using var mainConnection = await this.CreateMainConnectionAsync(cancellationToken);
 
                 while (true)
                 {
-                    var channelId = await this.ReadChannelIdAsync(connection, cancellationToken);
-                    this.TunnelAsync(channelId, cancellationToken);
+                    var connectionId = await this.ReadConnectionIdAsync(mainConnection, cancellationToken);
+                    this.BindingConnectionsAsync(connectionId, cancellationToken);
                 }
             }
             catch (Exception)
@@ -66,7 +66,7 @@ namespace HttpMouse.Client
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<ClientWebSocket> CreateConnectionAsync(CancellationToken cancellationToken)
+        private async Task<ClientWebSocket> CreateMainConnectionAsync(CancellationToken cancellationToken)
         {
             var uriBuilder = new UriBuilder(this.options.Value.Server);
             uriBuilder.Scheme = uriBuilder.Scheme == Uri.UriSchemeHttp ? "ws" : "wss";
@@ -84,78 +84,81 @@ namespace HttpMouse.Client
         }
 
         /// <summary>
-        /// 读取要创建的传输通道id
+        /// 读取要创建的反向连接的id
         /// </summary>
-        /// <param name="connection"></param>
+        /// <param name="mainConnection"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<uint> ReadChannelIdAsync(ClientWebSocket connection, CancellationToken cancellationToken)
+        private async Task<uint> ReadConnectionIdAsync(ClientWebSocket mainConnection, CancellationToken cancellationToken)
         {
-            var result = await connection.ReceiveAsync(this.channelIdBuffer, cancellationToken);
+            var result = await mainConnection.ReceiveAsync(this.connectionIdBuffer, cancellationToken);
             return result.MessageType == WebSocketMessageType.Close
                 ? throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription)
-                : BinaryPrimitives.ReadUInt32BigEndian(this.channelIdBuffer);
+                : BinaryPrimitives.ReadUInt32BigEndian(this.connectionIdBuffer);
         }
 
 
         /// <summary>
-        /// 绑定传输通道进行传输
+        /// 绑定上下游的连接进行双向传输
         /// </summary> 
-        /// <param name="channelId"></param>
+        /// <param name="reverseConnectionId"></param>
         /// <param name="cancellationToken"></param>
-        private async void TunnelAsync(uint channelId, CancellationToken cancellationToken)
+        private async void BindingConnectionsAsync(uint connectionId, CancellationToken cancellationToken)
         {
             try
             {
                 await Task.Yield();
 
-                using var serverChannel = await this.CreateServerChannelAsync(channelId, cancellationToken);
-                using var clientChannel = await this.CreateClientChannelAsync(cancellationToken);
+                using var upConnection = await this.CreateUpConnectionAsync(cancellationToken);
+                using var downConnection = await this.CreateDownConnectionAsync(connectionId, cancellationToken);
 
-                var taskX = serverChannel.CopyToAsync(clientChannel, cancellationToken);
-                var taskY = clientChannel.CopyToAsync(serverChannel, cancellationToken);
+                var taskX = upConnection.CopyToAsync(downConnection, cancellationToken);
+                var taskY = downConnection.CopyToAsync(upConnection, cancellationToken);
+
+                this.logger.LogInformation($"传输通道{connectionId}传输中");
                 await Task.WhenAny(taskX, taskY);
+                this.logger.LogInformation($"传输通道{connectionId}传输结束");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                this.logger.LogWarning($"传输通道{channelId}传输结束");
+                this.logger.LogWarning($"传输通道{connectionId}传输结束：{ex.Message}");
             }
         }
 
         /// <summary>
-        /// 创建服务端传输通道
+        /// 创建下游连接
         /// </summary>
-        /// <param name="channelId"></param>
+        /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<Stream> CreateServerChannelAsync(uint channelId, CancellationToken cancellationToken)
+        private async Task<Stream> CreateDownConnectionAsync(uint connectionId, CancellationToken cancellationToken)
         {
             var server = this.options.Value.Server;
             var endpoint = new DnsEndPoint(server.Host, server.Port);
             var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(endpoint, cancellationToken);
 
-            Stream channel = new NetworkStream(socket, ownsSocket: true);
+            Stream connection = new NetworkStream(socket, ownsSocket: true);
             if (server.Scheme == Uri.UriSchemeHttps)
             {
-                var sslChannel = new SslStream(channel, false, delegate { return true; });
-                await sslChannel.AuthenticateAsClientAsync(server.Host);
-                channel = sslChannel;
+                var sslConnection = new SslStream(connection, false, delegate { return true; });
+                await sslConnection.AuthenticateAsClientAsync(server.Host);
+                connection = sslConnection;
             }
 
-            var channelIdMemory = new byte[sizeof(uint)];
-            BinaryPrimitives.WriteUInt32BigEndian(channelIdMemory, channelId);
-            await channel.WriteAsync(channelIdMemory, cancellationToken);
+            var connectionIdMemory = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32BigEndian(connectionIdMemory, connectionId);
+            await connection.WriteAsync(connectionIdMemory, cancellationToken);
 
-            return channel;
+            return connection;
         }
 
         /// <summary>
-        /// 创建客户端传输通道
+        /// 创建上游连接
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<Stream> CreateClientChannelAsync(CancellationToken cancellationToken)
+        private async Task<Stream> CreateUpConnectionAsync(CancellationToken cancellationToken)
         {
             var client = this.options.Value.ClientUpstream;
             var endpoint = new DnsEndPoint(client.Host, client.Port);

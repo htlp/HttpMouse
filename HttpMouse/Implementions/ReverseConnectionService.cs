@@ -9,19 +9,19 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HttpMouse.Connections
+namespace HttpMouse.Implementions
 {
     /// <summary>
     /// 表示反向连接服务
     /// </summary>
-    sealed class ReverseConnectionService
+    sealed class ReverseConnectionService: IReverseConnectionService
     {
         private uint _reverseConnectionId = 0;
         private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
         private readonly TimeSpan timeout = TimeSpan.FromSeconds(10d);
         private readonly ConcurrentDictionary<uint, IAwaitableCompletionSource<Stream>> reverseConnectAwaiterTable = new();
 
-        private readonly MainConnectionService mainConnectionService;
+        private readonly IMainConnectionService mainConnectionService;
         private readonly ILogger<ReverseConnectionService> logger;
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace HttpMouse.Connections
         /// <param name="mainConnectionService"></param>
         /// <param name="logger"></param>
         public ReverseConnectionService(
-            MainConnectionService mainConnectionService,
+            IMainConnectionService mainConnectionService,
             ILogger<ReverseConnectionService> logger)
         {
             this.mainConnectionService = mainConnectionService;
@@ -47,7 +47,12 @@ namespace HttpMouse.Connections
         {
             if (context.InitialRequestMessage.Options.TryGetValue(clientDomainKey, out var clientDomain) == false)
             {
-                throw new InvalidOperationException("无法创建http连接：未知道目标域名");
+                throw new InvalidOperationException("无法创建反向连接：未知道目标域名");
+            }
+
+            if (this.mainConnectionService.TryGetValue(clientDomain, out var mainConnection) == false)
+            {
+                throw new Exception("无法创建反向连接：目标未连接");
             }
 
             var reverseConnectionId = Interlocked.Increment(ref this._reverseConnectionId);
@@ -57,7 +62,7 @@ namespace HttpMouse.Connections
 
             try
             {
-                await this.mainConnectionService.SendCreateTransportChannelAsync(clientDomain, reverseConnectionId, cancellation);
+                await mainConnection.SendCreateReverseConnectionAsync(reverseConnectionId, cancellation);
                 return await reverseConnectionAwaiter.Task;
             }
             catch (Exception ex)
@@ -73,12 +78,12 @@ namespace HttpMouse.Connections
 
         /// <summary>
         /// kestrel收到连接
-        /// 从kestrel连接过滤HttpConnection
+        /// 从kestrel连接过滤ReverseConnection
         /// </summary>
         /// <param name="context"></param>
         /// <param name="next"></param>
         /// <returns></returns>
-        public async Task OnKestrelConnectedAsync(ConnectionContext context, Func<Task> next)
+        public async Task HandleKestrelConnectionAsync(ConnectionContext context, Func<Task> next)
         {
             using var cancellationTokenSource = new CancellationTokenSource(this.timeout);
             var cancellationToken = cancellationTokenSource.Token;
