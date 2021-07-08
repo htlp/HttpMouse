@@ -1,22 +1,56 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using HttpMouse.Implementions;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Yarp.ReverseProxy.Configuration;
+using Yarp.ReverseProxy.Forwarder;
 using Yarp.ReverseProxy.Transforms;
 
 namespace HttpMouse
 {
-    static class ReverseProxyExtensions
+    static class HttpMouseExtensions
     {
+        /// <summary>
+        /// 添加HttpMouse
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddHttpMouse(this IServiceCollection services)
+        {
+            services
+               .AddReverseProxy()
+               .AddClientDomainOptionsTransform();
+
+            return services
+                .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
+                .AddSingleton<IMainConnectionService, MainConnectionService>()
+                .AddSingleton<IReverseConnectionService, ReverseConnectionService>()
+                .AddSingleton<IForwarderHttpClientFactory, ReverseHttpClientFactory>();
+        }
+
+        /// <summary>
+        /// 配置HttpMouse
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configuration"></param>
+        /// <returns></returns>
+        public static IServiceCollection ConfigureHttpMouse(this IServiceCollection services, IConfiguration configuration)
+        {
+            return services.Configure<HttpMouseOptions>(configuration);
+        }
+
+
         /// <summary>
         /// 添加ClientDomain的options
         /// </summary>
         /// <param name="builder"></param>
         /// <returns></returns>
-        public static IReverseProxyBuilder AddClientDomainOptionsTransform(this IReverseProxyBuilder builder)
+        private static IReverseProxyBuilder AddClientDomainOptionsTransform(this IReverseProxyBuilder builder)
         {
             var optionsKey = new HttpRequestOptionsKey<string>("ClientDomain");
             return builder.AddTransforms(ctx => ctx.AddRequestTransform(request =>

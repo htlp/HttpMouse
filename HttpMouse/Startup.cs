@@ -1,11 +1,8 @@
-using HttpMouse.Implementions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Yarp.ReverseProxy.Configuration;
-using Yarp.ReverseProxy.Forwarder;
 
 namespace HttpMouse
 {
@@ -25,18 +22,8 @@ namespace HttpMouse
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddReverseProxy()
-                .AddClientDomainOptionsTransform();
-
-            services
-                .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
-                .AddSingleton<IMainConnectionService, MainConnectionService>()
-                .AddSingleton<IReverseConnectionService, ReverseConnectionService>()
-                .AddSingleton<IForwarderHttpClientFactory, ReverseHttpClientFactory>();
-
-            services
-                .AddOptions<HttpMouseOptions>()
-                .Bind(this.Configuration.GetSection("HttpMouse"));
+                .AddHttpMouse()
+                .ConfigureHttpMouse(this.Configuration.GetSection("HttpMouse"));
         }
 
         /// <summary>

@@ -40,8 +40,8 @@ namespace HttpMouse.Client
         /// <returns></returns>
         public async Task TransportAsync(CancellationToken stoppingToken)
         {
-            using var tunnelTokenSource = new CancellationTokenSource();
-            using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, tunnelTokenSource.Token);
+            using var transportTokenSource = new CancellationTokenSource();
+            using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, transportTokenSource.Token);
 
             try
             {
@@ -56,7 +56,7 @@ namespace HttpMouse.Client
             }
             catch (Exception)
             {
-                tunnelTokenSource.Cancel();
+                transportTokenSource.Cancel();
                 throw;
             }
         }
