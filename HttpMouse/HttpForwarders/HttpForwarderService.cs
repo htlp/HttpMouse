@@ -1,14 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using HttpMouse.Connections;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System;
 using System.IO;
-using System.Net;
 using System.Net.Http;
-using System.Net.Security;
 using System.Threading.Tasks;
 using Yarp.ReverseProxy.Forwarder;
 
-namespace HttpMouse.Applications
+namespace HttpMouse.HttpForwarders
 {
     /// <summary>
     /// http反向代理服务
@@ -16,7 +15,7 @@ namespace HttpMouse.Applications
     sealed class HttpForwarderService
     {
         private readonly IHttpForwarder httpForwarder;
-        private readonly ConnectionService connectionService;
+        private readonly MainConnectionService mainConnectionService;
         private readonly IOptionsMonitor<HttpMouseOptions> options;
         private readonly HttpMessageInvoker httpClient;
         private readonly ForwarderRequestConfig defaultRequestConfig = new();
@@ -26,34 +25,19 @@ namespace HttpMouse.Applications
         /// http反向代理服务
         /// </summary>
         /// <param name="httpForwarder"></param>
-        /// <param name="connectionService"></param>
-        /// <param name="transportChannelService"></param>
+        /// <param name="mainConnectionService"></param>
+        /// <param name="httpClientFactory"></param>
+        /// <param name="options"></param>
         public HttpForwarderService(
             IHttpForwarder httpForwarder,
-            ConnectionService connectionService,
-            TransportChannelService transportChannelService,
+            MainConnectionService mainConnectionService,
+            HttpClientFactory httpClientFactory,
             IOptionsMonitor<HttpMouseOptions> options)
         {
             this.httpForwarder = httpForwarder;
-            this.connectionService = connectionService;
+            this.mainConnectionService = mainConnectionService;
+            this.httpClient = httpClientFactory.CreateHttpClient();
             this.options = options;
-            this.httpClient = CreateHttpClient(transportChannelService);
-        }
-
-        private static HttpMessageInvoker CreateHttpClient(TransportChannelService transportChannelService)
-        {
-            return new HttpMessageInvoker(new SocketsHttpHandler()
-            {
-                UseProxy = false,
-                UseCookies = false,
-                AllowAutoRedirect = false,
-                AutomaticDecompression = DecompressionMethods.None,
-                ConnectCallback = transportChannelService.CreateChannelAsync,
-                SslOptions = new SslClientAuthenticationOptions
-                {
-                    RemoteCertificateValidationCallback = delegate { return true; }
-                }
-            });
         }
 
         /// <summary>
@@ -65,7 +49,7 @@ namespace HttpMouse.Applications
         {
             var error = ForwarderError.NoAvailableDestinations;
             var clientDomain = httpContext.Request.Host.Host;
-            if (this.connectionService.TryGetClientUpStream(clientDomain, out var clientUpstream))
+            if (this.mainConnectionService.TryGetClientUpStream(clientDomain, out var clientUpstream))
             {
                 var destPrefix = clientUpstream.ToString();
                 if (this.options.CurrentValue.HttpRequest.TryGetValue(clientDomain, out var requestConfig) == false)
@@ -84,18 +68,6 @@ namespace HttpMouse.Applications
                     httpContext.Response.ContentType = serverError.ContentType;
                     await httpContext.Response.SendFileAsync(serverError.ContentFile);
                 }
-            }
-        }
-
-        private class OptionsTransformer : HttpTransformer
-        {
-            private static readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
-
-            public override async ValueTask TransformRequestAsync(HttpContext httpContext, HttpRequestMessage proxyRequest, string destinationPrefix)
-            {
-                await base.TransformRequestAsync(httpContext, proxyRequest, destinationPrefix);
-                proxyRequest.Headers.Host = null;
-                proxyRequest.Options.Set(clientDomainKey, httpContext.Request.Host.Host);
             }
         }
     }

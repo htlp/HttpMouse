@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -10,28 +9,28 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HttpMouse.Applications
+namespace HttpMouse.Connections
 {
     /// <summary>
     /// 主连接服务
     /// </summary> 
-    sealed class ConnectionService
+    sealed class MainConnectionService
     {
         private const string SERVER_KEY = "ServerKey";
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
 
         private readonly IOptionsMonitor<HttpMouseOptions> options;
-        private readonly ILogger<ConnectionService> logger;
-        private readonly ConcurrentDictionary<string, Connection> connections = new();
+        private readonly ILogger<MainConnectionService> logger;
+        private readonly ConcurrentDictionary<string, MainConnection> connections = new();
 
         /// <summary>
         /// 主连接服务
         /// </summary>
         /// <param name="logger"></param>
-        public ConnectionService(
+        public MainConnectionService(
             IOptionsMonitor<HttpMouseOptions> options,
-            ILogger<ConnectionService> logger)
+            ILogger<MainConnectionService> logger)
         {
             this.options = options;
             this.logger = logger;
@@ -57,7 +56,7 @@ namespace HttpMouse.Applications
 
             var clientDomain = domainValues.ToString();
             using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-            var connection = new Connection(clientDomain, clientUpstream, webSocket);
+            var connection = new MainConnection(clientDomain, clientUpstream, webSocket);
 
             // 密钥验证
             var key = this.options.CurrentValue.Key;
@@ -116,71 +115,6 @@ namespace HttpMouse.Applications
             var channelIdBuffer = new byte[sizeof(uint)];
             BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, channelId);
             await connection.WebSocket.SendAsync(channelIdBuffer, WebSocketMessageType.Binary, true, cancellationToken);
-        }
-
-        /// <summary>
-        /// 表示一个连接
-        /// </summary>
-        private class Connection
-        {
-            public string Domain { get; }
-
-            public Uri Upstream { get; }
-
-            public WebSocket WebSocket { get; }
-
-            public Connection(string domain, Uri Upstream, WebSocket WebSocket)
-            {
-                this.Domain = domain;
-                this.Upstream = Upstream;
-                this.WebSocket = WebSocket;
-            }
-
-            /// <summary>
-            /// 等待关闭
-            /// </summary>
-            /// <param name="cancellationToken"></param>
-            /// <returns></returns>
-            public async Task WaitingCloseAsync(CancellationToken cancellationToken = default)
-            {
-                var buffer = ArrayPool<byte>.Shared.Rent(4);
-                try
-                {
-                    while (cancellationToken.IsCancellationRequested == false)
-                    {
-                        await this.WebSocket.ReceiveAsync(buffer, cancellationToken);
-                    }
-                }
-                catch (Exception)
-                {
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                }
-            }
-
-            /// <summary>
-            /// 异常关闭
-            /// </summary> 
-            /// <param name="error"></param>
-            /// <param name="cancellationToken"></param>
-            /// <returns></returns>
-            public async Task CloseAsync(string error, CancellationToken cancellationToken = default)
-            {
-                try
-                {
-                    await this.WebSocket.CloseAsync(WebSocketCloseStatus.ProtocolError, error, cancellationToken);
-                }
-                catch
-                {
-                }
-            }
-
-            public override string ToString()
-            {
-                return $"{this.Domain}->{this.Upstream}";
-            }
         }
     }
 }

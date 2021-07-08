@@ -1,4 +1,5 @@
-using HttpMouse.Applications;
+using HttpMouse.Connections;
+using HttpMouse.HttpForwarders;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,9 +25,10 @@ namespace HttpMouse
         {
             services
                 .AddHttpForwarder()
-                .AddSingleton<HttpForwarderService>()
-                .AddSingleton<ConnectionService>()
-                .AddSingleton<TransportChannelService>();
+                .AddSingleton<HttpClientFactory>()
+                .AddSingleton<MainConnectionService>()
+                .AddSingleton<ReverseConnectionService>()
+                .AddSingleton<HttpForwarderService>();
 
             services
                 .AddOptions<HttpMouseOptions>()
@@ -37,9 +39,9 @@ namespace HttpMouse
         /// ≈‰÷√÷–º‰º˛
         /// </summary>
         /// <param name="app"></param>
-        /// <param name="connectionService"></param>
+        /// <param name="mainConnectionService"></param>
         /// <param name="httpForwarderService"></param> 
-        public void Configure(IApplicationBuilder app, IHostEnvironment hostEnvironment, ConnectionService connectionService, HttpForwarderService httpForwarderService)
+        public void Configure(IApplicationBuilder app, IHostEnvironment hostEnvironment, MainConnectionService mainConnectionService, HttpForwarderService httpForwarderService)
         {
             if (hostEnvironment.IsDevelopment())
             {
@@ -47,7 +49,7 @@ namespace HttpMouse
             }
 
             app.UseWebSockets();
-            app.Use(connectionService.OnConnectedAsync);
+            app.Use(mainConnectionService.OnConnectedAsync);
             app.Use(httpForwarderService.SendAsync);
         }
     }
