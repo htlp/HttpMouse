@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Connections;
 using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,10 +14,10 @@ namespace HttpMouse
         /// <summary>
         /// 创建一个反向连接
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="clientDomain">客户端域名</param>
         /// <param name="cancellation"></param>
         /// <returns></returns>
-        ValueTask<Stream> CreateReverseConnectionAsync(SocketsHttpConnectionContext context, CancellationToken cancellation);
+        ValueTask<Stream> CreateReverseConnectionAsync(string clientDomain, CancellationToken cancellation);
 
         /// <summary>
         /// 处理kestrel的连接 

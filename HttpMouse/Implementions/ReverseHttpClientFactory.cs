@@ -15,6 +15,8 @@ namespace HttpMouse.Implementions
     /// </summary>
     sealed class ReverseHttpClientFactory : IForwarderHttpClientFactory, IDisposable
     {
+        private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
+
         private readonly SocketsHttpHandler httpHandler;
         private readonly IReverseConnectionService reverseConnectionService;
         private readonly ILogger<ReverseHttpClientFactory> logger;
@@ -25,7 +27,8 @@ namespace HttpMouse.Implementions
         /// <param name="reverseConnectionService"></param>
         /// <param name="logger"></param>
         public ReverseHttpClientFactory(
-            IReverseConnectionService reverseConnectionService, ILogger<ReverseHttpClientFactory> logger)
+            IReverseConnectionService reverseConnectionService,
+            ILogger<ReverseHttpClientFactory> logger)
         {
             this.reverseConnectionService = reverseConnectionService;
             this.logger = logger;
@@ -52,9 +55,14 @@ namespace HttpMouse.Implementions
         /// <returns></returns>
         private async ValueTask<Stream> ConnectCallback(SocketsHttpConnectionContext context, CancellationToken cancellation)
         {
+            if (context.InitialRequestMessage.Options.TryGetValue(clientDomainKey, out var clientDomain) == false)
+            {
+                throw new InvalidOperationException($"未设置{nameof(HttpRequestMessage)}的Options：{clientDomainKey.Key}");
+            }
+
             try
             {
-                return await this.reverseConnectionService.CreateReverseConnectionAsync(context, cancellation);
+                return await this.reverseConnectionService.CreateReverseConnectionAsync(clientDomain, cancellation);
             }
             catch (Exception ex)
             {

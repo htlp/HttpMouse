@@ -4,11 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
-using Yarp.ReverseProxy.Transforms;
 
 namespace HttpMouse
 {
@@ -29,13 +26,7 @@ namespace HttpMouse
         {
             services
                 .AddReverseProxy()
-                .AddTransforms(ctx => ctx.AddRequestTransform(request =>
-                {
-                    var key = new HttpRequestOptionsKey<string>("ClientDomain");
-                    var clientDomain = request.HttpContext.Request.Host.Host;
-                    request.ProxyRequest.Options.Set(key, clientDomain);
-                    return ValueTask.CompletedTask;
-                }));
+                .AddClientDomainOptionsTransform();
 
             services
                 .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()

@@ -11,7 +11,7 @@ namespace HttpMouse.Implementions
     /// </summary>
     sealed class MemoryConfig : IProxyConfig
     {
-        private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+        private readonly CancellationTokenSource cancellationToken = new();
 
         /// <summary>
         /// 获取路由配置

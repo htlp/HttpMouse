@@ -5,7 +5,6 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,7 +16,6 @@ namespace HttpMouse.Implementions
     sealed class ReverseConnectionService : IReverseConnectionService
     {
         private uint _reverseConnectionId = 0;
-        private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
         private readonly TimeSpan timeout = TimeSpan.FromSeconds(10d);
         private readonly ConcurrentDictionary<uint, IAwaitableCompletionSource<Stream>> reverseConnectAwaiterTable = new();
 
@@ -40,16 +38,11 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 创建一个反向连接
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="clientDomain">客户端域名</param>
         /// <param name="cancellation"></param>
         /// <returns></returns>
-        public async ValueTask<Stream> CreateReverseConnectionAsync(SocketsHttpConnectionContext context, CancellationToken cancellation)
+        public async ValueTask<Stream> CreateReverseConnectionAsync(string clientDomain, CancellationToken cancellation)
         {
-            if (context.InitialRequestMessage.Options.TryGetValue(clientDomainKey, out var clientDomain) == false)
-            {
-                throw new InvalidOperationException("无法创建反向连接：未知道目标域名");
-            }
-
             if (this.mainConnectionService.TryGetValue(clientDomain, out var mainConnection) == false)
             {
                 throw new Exception($"无法创建反向连接：上游{clientDomain}未连接");

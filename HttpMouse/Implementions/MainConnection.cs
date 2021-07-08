@@ -18,7 +18,6 @@ namespace HttpMouse.Implementions
     {
         private readonly WebSocket webSocket;
         private readonly IOptionsMonitor<HttpMouseOptions> options;
-        private static readonly ForwarderRequestConfig defaultHttpRequest = new();
 
         /// <summary>
         /// 获取绑定的域名
@@ -62,7 +61,7 @@ namespace HttpMouse.Implementions
 
             if (this.options.CurrentValue.HttpRequest.TryGetValue(this.Domain, out var httpRequest) == false)
             {
-                httpRequest = defaultHttpRequest;
+                httpRequest = ForwarderRequestConfig.Empty;
             }
 
             return new ClusterConfig
