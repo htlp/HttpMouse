@@ -14,7 +14,7 @@ namespace HttpMouse.Implementions
     /// <summary>
     /// 表示反向连接服务
     /// </summary>
-    sealed class ReverseConnectionService: IReverseConnectionService
+    sealed class ReverseConnectionService : IReverseConnectionService
     {
         private uint _reverseConnectionId = 0;
         private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
@@ -52,7 +52,7 @@ namespace HttpMouse.Implementions
 
             if (this.mainConnectionService.TryGetValue(clientDomain, out var mainConnection) == false)
             {
-                throw new Exception("无法创建反向连接：目标未连接");
+                throw new Exception($"无法创建反向连接：上游{clientDomain}未连接");
             }
 
             var reverseConnectionId = Interlocked.Increment(ref this._reverseConnectionId);
