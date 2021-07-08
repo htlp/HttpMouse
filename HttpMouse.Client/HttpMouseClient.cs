@@ -76,7 +76,10 @@ namespace HttpMouse.Client
             webSocket.Options.SetRequestHeader(SERVER_KEY, this.options.Value.ServerKey);
             webSocket.Options.SetRequestHeader(CLIENT_DOMAIN, this.options.Value.ClientDomain);
             webSocket.Options.SetRequestHeader(CLIENT_UP_STREAM, this.options.Value.ClientUpstream.ToString());
+
+            this.logger.LogInformation($"正在连接到{this.options.Value.Server}");
             await webSocket.ConnectAsync(uriBuilder.Uri, cancellationToken);
+            this.logger.LogInformation($"连接到{this.options.Value.Server}成功");
             return webSocket;
         }
 
@@ -106,16 +109,12 @@ namespace HttpMouse.Client
             {
                 await Task.Yield();
 
-                this.logger.LogInformation($"正在创建传输通道{channelId}");
                 using var serverChannel = await this.CreateServerChannelAsync(channelId, cancellationToken);
                 using var clientChannel = await this.CreateClientChannelAsync(cancellationToken);
 
-                this.logger.LogInformation($"传输通道{channelId}传输进行中");
                 var taskX = serverChannel.CopyToAsync(clientChannel, cancellationToken);
                 var taskY = clientChannel.CopyToAsync(serverChannel, cancellationToken);
                 await Task.WhenAny(taskX, taskY);
-
-                this.logger.LogInformation($"传输通道{channelId}传输结束");
             }
             catch (Exception)
             {

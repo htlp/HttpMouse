@@ -25,8 +25,7 @@ namespace HttpMouse.ClientHost
             while (stoppingToken.IsCancellationRequested == false)
             {
                 try
-                {
-                    this.logger.LogInformation("传输ing..");
+                { 
                     await this.httpMouseClient.TransportAsync(stoppingToken);
                 }
                 catch (Exception ex)

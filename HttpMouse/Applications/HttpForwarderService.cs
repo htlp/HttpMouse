@@ -19,7 +19,8 @@ namespace HttpMouse.Applications
         private readonly ConnectionService connectionService;
         private readonly IOptionsMonitor<HttpMouseOptions> options;
         private readonly HttpMessageInvoker httpClient;
-        private readonly ForwarderRequestConfig forwarderRequestConfig = new();
+        private readonly ForwarderRequestConfig defaultRequestConfig = new();
+        private readonly OptionsTransformer transformer = new();
 
         /// <summary>
         /// http反向代理服务
@@ -67,8 +68,11 @@ namespace HttpMouse.Applications
             if (this.connectionService.TryGetClientUpStream(clientDomain, out var clientUpstream))
             {
                 var destPrefix = clientUpstream.ToString();
-                var transformer = new OptionsTransformer(clientDomain);
-                error = await this.httpForwarder.SendAsync(httpContext, destPrefix, httpClient, this.forwarderRequestConfig, transformer);
+                if (this.options.CurrentValue.HttpRequest.TryGetValue(clientDomain, out var requestConfig) == false)
+                {
+                    requestConfig = this.defaultRequestConfig;
+                }
+                error = await this.httpForwarder.SendAsync(httpContext, destPrefix, httpClient, requestConfig, this.transformer);
             }
 
             if (error != ForwarderError.None)
@@ -85,19 +89,13 @@ namespace HttpMouse.Applications
 
         private class OptionsTransformer : HttpTransformer
         {
-            private readonly string clientDomain;
             private static readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
-
-            public OptionsTransformer(string clientDomain)
-            {
-                this.clientDomain = clientDomain;
-            }
 
             public override async ValueTask TransformRequestAsync(HttpContext httpContext, HttpRequestMessage proxyRequest, string destinationPrefix)
             {
                 await base.TransformRequestAsync(httpContext, proxyRequest, destinationPrefix);
                 proxyRequest.Headers.Host = null;
-                proxyRequest.Options.Set(clientDomainKey, this.clientDomain);
+                proxyRequest.Options.Set(clientDomainKey, httpContext.Request.Host.Host);
             }
         }
     }

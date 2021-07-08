@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
+using Yarp.ReverseProxy.Forwarder;
 
 namespace HttpMouse
 {
@@ -12,7 +14,12 @@ namespace HttpMouse
         /// <summary>
         /// 监听
         /// </summary>
-        public ServerListen Listen { get; set; } = new ServerListen();
+        public ServerListen Listen { get; set; } = new();
+
+        /// <summary>
+        /// 请求配置
+        /// </summary>
+        public Dictionary<string, ForwarderRequestConfig> HttpRequest { get; set; } = new();
 
         /// <summary>
         /// 错误返回

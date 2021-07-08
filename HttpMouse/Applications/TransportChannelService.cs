@@ -57,12 +57,8 @@ namespace HttpMouse.Applications
 
             try
             {
-                this.logger.LogInformation($"正在创建传输通道{channelId}");
                 await this.connectionService.SendCreateTransportChannelAsync(clientDomain, channelId, cancellation);
-                var channel = await channelAwaiter.Task;
-
-                this.logger.LogInformation($"创建传输通道{channelId}成功");
-                return channel;
+                return await channelAwaiter.Task;
             }
             catch (Exception ex)
             {
