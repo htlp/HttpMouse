@@ -1,4 +1,5 @@
-﻿using HttpMouse.Implementions;
+﻿using HttpMouse.Abstractions;
+using HttpMouse.Implementions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -29,6 +30,7 @@ namespace HttpMouse
             return services
                 .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
                 .AddSingleton<IMainConnectionService, MainConnectionService>()
+                .AddSingleton<IMainConnectionAuthenticator, MainConnectionAuthenticator>()
                 .AddSingleton<IReverseConnectionService, ReverseConnectionService>()
                 .AddSingleton<IForwarderHttpClientFactory, ReverseForwarderHttpClientFactory>();
         }

@@ -8,7 +8,7 @@ namespace HttpMouse
         /// <summary>
         /// 密钥
         /// </summary>
-        public string? Key { get; set; } 
+        public string? Key { get; set; }
 
         /// <summary>
         /// 请求配置
@@ -18,7 +18,7 @@ namespace HttpMouse
         /// <summary>
         /// 错误返回
         /// </summary>
-        public ServerFallback Fallback { get; set; } = new ServerFallback(); 
+        public ServerFallback Fallback { get; set; } = new ServerFallback();
 
         /// <summary>
         /// 错误回退

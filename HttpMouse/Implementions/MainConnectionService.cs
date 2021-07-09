@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using HttpMouse.Abstractions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -17,7 +18,7 @@ namespace HttpMouse.Implementions
         private const string SERVER_KEY = "ServerKey";
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
-
+        private readonly IMainConnectionAuthenticator authenticator;
         private readonly IOptionsMonitor<HttpMouseOptions> options;
         private readonly ILogger<MainConnectionService> logger;
         private readonly ConcurrentDictionary<string, IMainConnection> connections = new();
@@ -31,11 +32,15 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 主连接服务
         /// </summary>
+        /// <param name="authenticator"></param>
+        /// <param name="options"></param>
         /// <param name="logger"></param>
         public MainConnectionService(
+            IMainConnectionAuthenticator authenticator,
             IOptionsMonitor<HttpMouseOptions> options,
             ILogger<MainConnectionService> logger)
         {
+            this.authenticator = authenticator;
             this.options = options;
             this.logger = logger;
         }
@@ -74,8 +79,8 @@ namespace HttpMouse.Implementions
             var connection = new MainConnection(clientDomain, clientUpstream, webSocket, this.options);
 
             // 密钥验证
-            var key = this.options.CurrentValue.Key;
-            if (string.IsNullOrEmpty(key) == false && key != keyValues.ToString())
+            var key = keyValues.ToString();
+            if (await this.authenticator.AuthenticateAsync(clientDomain, key) == false)
             {
                 await connection.CloseAsync("Key不正确");
                 return;

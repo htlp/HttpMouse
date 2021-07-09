@@ -39,7 +39,7 @@ namespace HttpMouse
             {
                 app.UseSerilogRequestLogging();
             }
-
+             
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
