@@ -9,14 +9,14 @@ namespace HttpMouse.ClientHost
 {
     sealed class HttpMouseClientHostedService : BackgroundService
     {
-        private readonly IHttpMouseClient httpMouseClient;
+        private readonly IHttpMouseClientFactory httpMouseClientFactory;
         private readonly ILogger<HttpMouseClientHostedService> logger;
 
         public HttpMouseClientHostedService(
-            IHttpMouseClient httpMouseClient,
+            IHttpMouseClientFactory httpMouseClientFactory,
             ILogger<HttpMouseClientHostedService> logger)
         {
-            this.httpMouseClient = httpMouseClient;
+            this.httpMouseClientFactory = httpMouseClientFactory;
             this.logger = logger;
         }
 
@@ -25,8 +25,11 @@ namespace HttpMouse.ClientHost
             while (stoppingToken.IsCancellationRequested == false)
             {
                 try
-                { 
-                    await this.httpMouseClient.TransportAsync(stoppingToken);
+                {
+                    using var client = await this.httpMouseClientFactory.CreateAsync(stoppingToken);
+                    this.logger.LogInformation($"连接到服务器成功，数据传输中");
+                    await client.TransportAsync(stoppingToken);
+                    this.logger.LogInformation($"数据传输结束");
                 }
                 catch (Exception ex)
                 {

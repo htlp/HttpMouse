@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System;
+﻿using System;
 using System.Buffers.Binary;
 using System.IO;
 using System.Net;
@@ -17,84 +15,62 @@ namespace HttpMouse.Client
     /// </summary>
     sealed class HttpMouseClient : IHttpMouseClient
     {
-        private const string CLIENT_DOMAIN = "ClientDomain";
-        private const string CLIENT_UP_STREAM = "ClientUpstream";
-        private const string SERVER_KEY = "ServerKey";
+        private readonly ClientWebSocket mainConnection;
+        private readonly HttpMouseClientOptions options;
+        private readonly CancellationTokenSource disposeCancellationTokenSource = new();
 
-        private readonly ILogger<HttpMouseClient> logger;
-        private readonly IOptions<HttpMouseClientOptions> options;
-        private readonly byte[] connectionIdBuffer = new byte[sizeof(uint)];
+        /// <summary>
+        /// 获取是否连接
+        /// </summary>
+        public bool IsConnected => this.mainConnection.State == WebSocketState.Open;
 
-        public HttpMouseClient(
-            ILogger<HttpMouseClient> logger,
-            IOptions<HttpMouseClientOptions> options)
+        /// <summary>
+        /// 客户端
+        /// </summary>
+        /// <param name="mainConnection"></param>
+        /// <param name="options"></param>
+        public HttpMouseClient(ClientWebSocket mainConnection, HttpMouseClientOptions options)
         {
-            this.logger = logger;
+            this.mainConnection = mainConnection;
             this.options = options;
         }
 
         /// <summary>
         /// 传输数据
         /// </summary>
-        /// <param name="stoppingToken"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task TransportAsync(CancellationToken stoppingToken)
+        public async Task TransportAsync(CancellationToken cancellationToken)
         {
-            using var transportTokenSource = new CancellationTokenSource();
-            using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, transportTokenSource.Token);
-
+            using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.disposeCancellationTokenSource.Token);
             try
             {
-                var cancellationToken = linkedTokenSource.Token;
-                using var mainConnection = await this.CreateMainConnectionAsync(cancellationToken);
-
                 while (true)
                 {
-                    var connectionId = await this.ReadConnectionIdAsync(mainConnection, cancellationToken);
-                    this.BindingConnectionsAsync(connectionId, cancellationToken);
+                    var connectionId = await this.ReadConnectionIdAsync(cancellationTokenSource.Token);
+                    this.TransportAsync(connectionId, cancellationTokenSource.Token);
                 }
             }
             catch (Exception)
             {
-                transportTokenSource.Cancel();
+                cancellationTokenSource.Cancel();
                 throw;
             }
         }
 
         /// <summary>
-        /// 创建服务器连接
-        /// </summary>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private async Task<ClientWebSocket> CreateMainConnectionAsync(CancellationToken cancellationToken)
-        {
-            var uriBuilder = new UriBuilder(this.options.Value.Server);
-            uriBuilder.Scheme = uriBuilder.Scheme == Uri.UriSchemeHttp ? "ws" : "wss";
-
-            var webSocket = new ClientWebSocket();
-            webSocket.Options.RemoteCertificateValidationCallback = delegate { return true; };
-            webSocket.Options.SetRequestHeader(SERVER_KEY, this.options.Value.ServerKey);
-            webSocket.Options.SetRequestHeader(CLIENT_DOMAIN, this.options.Value.ClientDomain);
-            webSocket.Options.SetRequestHeader(CLIENT_UP_STREAM, this.options.Value.ClientUpstream.ToString());
-
-            this.logger.LogInformation($"正在连接到{this.options.Value.Server}");
-            await webSocket.ConnectAsync(uriBuilder.Uri, cancellationToken);
-            this.logger.LogInformation($"连接到{this.options.Value.Server}成功");
-            return webSocket;
-        }
-
-        /// <summary>
         /// 读取要创建的反向连接的id
-        /// </summary>
-        /// <param name="mainConnection"></param>
+        /// </summary> 
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<uint> ReadConnectionIdAsync(ClientWebSocket mainConnection, CancellationToken cancellationToken)
+        private async Task<uint> ReadConnectionIdAsync(CancellationToken cancellationToken)
         {
-            var result = await mainConnection.ReceiveAsync(this.connectionIdBuffer, cancellationToken);
+            var connectionIdBuffer = new byte[sizeof(uint)];
+            var result = await this.mainConnection.ReceiveAsync(connectionIdBuffer, cancellationToken);
+
             return result.MessageType == WebSocketMessageType.Close
                 ? throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription)
-                : BinaryPrimitives.ReadUInt32BigEndian(this.connectionIdBuffer);
+                : BinaryPrimitives.ReadUInt32BigEndian(connectionIdBuffer);
         }
 
 
@@ -103,7 +79,7 @@ namespace HttpMouse.Client
         /// </summary> 
         /// <param name="reverseConnectionId"></param>
         /// <param name="cancellationToken"></param>
-        private async void BindingConnectionsAsync(uint connectionId, CancellationToken cancellationToken)
+        private async void TransportAsync(uint connectionId, CancellationToken cancellationToken)
         {
             try
             {
@@ -115,13 +91,10 @@ namespace HttpMouse.Client
                 var taskX = upConnection.CopyToAsync(downConnection, cancellationToken);
                 var taskY = downConnection.CopyToAsync(upConnection, cancellationToken);
 
-                this.logger.LogInformation($"传输通道{connectionId}传输中");
                 await Task.WhenAny(taskX, taskY);
-                this.logger.LogInformation($"传输通道{connectionId}传输结束");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                this.logger.LogWarning($"传输通道{connectionId}传输结束：{ex.Message}");
             }
         }
 
@@ -133,7 +106,7 @@ namespace HttpMouse.Client
         /// <returns></returns>
         private async Task<Stream> CreateDownConnectionAsync(uint connectionId, CancellationToken cancellationToken)
         {
-            var server = this.options.Value.Server;
+            var server = this.options.Server;
             var endpoint = new DnsEndPoint(server.Host, server.Port);
             var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(endpoint, cancellationToken);
@@ -160,12 +133,22 @@ namespace HttpMouse.Client
         /// <returns></returns>
         private async Task<Stream> CreateUpConnectionAsync(CancellationToken cancellationToken)
         {
-            var client = this.options.Value.ClientUpstream;
+            var client = this.options.ClientUpstream;
             var endpoint = new DnsEndPoint(client.Host, client.Port);
             var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(endpoint, cancellationToken);
 
             return new NetworkStream(socket, ownsSocket: true);
+        }
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            this.disposeCancellationTokenSource.Cancel();
+            this.disposeCancellationTokenSource.Dispose();
+            this.mainConnection.Dispose();
         }
     }
 }
