@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -119,9 +120,9 @@ namespace HttpMouse.Client
                 connection = sslConnection;
             }
 
-            var connectionIdMemory = new byte[sizeof(uint)];
-            BinaryPrimitives.WriteUInt32BigEndian(connectionIdMemory, connectionId);
-            await connection.WriteAsync(connectionIdMemory, cancellationToken);
+            var reverse = $"REVERSE /{connectionId} HTTP/1.1\r\nHost: {server.Host}\r\n\r\n";
+            var request = Encoding.ASCII.GetBytes(reverse);
+            await connection.WriteAsync(request, cancellationToken);
 
             return connection;
         }

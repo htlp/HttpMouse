@@ -30,11 +30,10 @@ namespace HttpMouse
         /// ≈‰÷√÷–º‰º˛
         /// </summary>
         /// <param name="app"></param>
-        /// <param name="mainConnectionService"></param> 
-        public void Configure(IApplicationBuilder app, IHostEnvironment hostEnvironment, IMainConnectionService mainConnectionService)
+        /// <param name="hostEnvironment"></param>
+        public void Configure(IApplicationBuilder app, IHostEnvironment hostEnvironment)
         {
-            app.UseWebSockets();
-            app.Use(mainConnectionService.HandleConnectionAsync);
+            app.UseHttpMouse();
 
             if (hostEnvironment.IsDevelopment())
             {

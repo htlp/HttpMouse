@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace HttpMouse
 {
@@ -15,10 +16,17 @@ namespace HttpMouse
         {
             return Host
                 .CreateDefaultBuilder(args)
-                .UseFileConsoleSerilog()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>().UseKestrelReverseConnection();
+                })
+                .UseSerilog((hosting, logger) =>
+                {
+                    const string template = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}]{NewLine}{SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}";
+                    logger.ReadFrom.Configuration(hosting.Configuration)
+                        .Enrich.FromLogContext()
+                        .WriteTo.Console(outputTemplate: template)
+                        .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day, outputTemplate: template);
                 });
         }
     }

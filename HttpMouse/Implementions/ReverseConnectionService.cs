@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Connections;
+﻿using Microsoft.AspNetCore.Connections.Features;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO;
-using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,72 +68,56 @@ namespace HttpMouse.Implementions
             }
         }
 
+
         /// <summary>
-        /// kestrel收到连接
-        /// 从kestrel连接过滤ReverseConnection
+        /// 处理连接
         /// </summary>
         /// <param name="context"></param>
         /// <param name="next"></param>
         /// <returns></returns>
-        public async Task HandleKestrelConnectionAsync(ConnectionContext context, Func<Task> next)
+        public async Task HandleConnectionAsync(HttpContext context, Func<Task> next)
         {
-            using var cancellationTokenSource = new CancellationTokenSource(this.timeout);
-            var cancellationToken = cancellationTokenSource.Token;
-            var pipeReader = context.Transport.Input;
-            ReadResult result;
-            try
-            {
-                result = await pipeReader.ReadAsync(cancellationToken);
-            }
-            catch (Exception) when (cancellationToken.IsCancellationRequested)
-            {
-                await next();
-                return;
-            }
-
-            if (result.IsCanceled || result.IsCompleted)
-            {
-                context.Abort();
-                return;
-            }
-
-            if (TryReadReverseConnectionId(result.Buffer, out var reverseConnectionId) == false ||
+            if (TryReadReverseConnectionId(context, out var reverseConnectionId) == false ||
                 this.reverseConnectAwaiterTable.TryRemove(reverseConnectionId, out var reverseConnectionAwaiter) == false)
             {
-                pipeReader.AdvanceTo(result.Buffer.Start);
                 await next();
                 return;
             }
 
-            var position = result.Buffer.GetPosition(sizeof(uint));
-            pipeReader.AdvanceTo(position);
+            var lifetime = context.Features.Get<IConnectionLifetimeFeature>();
+            var transport = context.Features.Get<IConnectionTransportFeature>();
 
-            var reverseConnection = new ReverseConnection(context);
+            if (lifetime == null || transport == null)
+            {
+                await next();
+                return;
+            }
+
+            using var reverseConnection = new ReverseConnection(lifetime, transport);
             reverseConnectionAwaiter.TrySetResult(reverseConnection);
 
             using var closedAwaiter = AwaitableCompletionSource.Create<object?>();
-            context.ConnectionClosed.Register(state => ((IAwaitableCompletionSource)state!).TrySetResult(null), closedAwaiter);
+            lifetime.ConnectionClosed.Register(state => ((IAwaitableCompletionSource)state!).TrySetResult(null), closedAwaiter);
             await closedAwaiter.Task;
-            await context.DisposeAsync();
         }
-
 
         /// <summary>
         /// 读取ReverseConnection的id
         /// </summary>
-        /// <param name="buffer"></param>
+        /// <param name="context"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        private static bool TryReadReverseConnectionId(ReadOnlySequence<byte> buffer, out uint value)
+        private static bool TryReadReverseConnectionId(HttpContext context, out uint value)
         {
-            var reader = new SequenceReader<byte>(buffer);
-            if (reader.TryReadBigEndian(out int intValue))
+            const string method = "REVERSE";
+            if (context.Request.Method != method)
             {
-                value = (uint)intValue;
-                return true;
+                value = default;
+                return default;
             }
-            value = default;
-            return false;
+
+            var path = context.Request.Path.Value.AsSpan();
+            return uint.TryParse(path[1..], out value);
         }
     }
 }

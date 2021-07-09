@@ -62,6 +62,23 @@ namespace HttpMouse
         }
 
         /// <summary>
+        /// 使用httpMouse中间件
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
+        public static IApplicationBuilder UseHttpMouse(this IApplicationBuilder builder)
+        {
+            var mainConnectionService = builder.ApplicationServices.GetRequiredService<IMainConnectionService>();
+            var reverseConnectionService = builder.ApplicationServices.GetRequiredService<IReverseConnectionService>();
+
+            builder.UseWebSockets();
+            builder.Use(mainConnectionService.HandleConnectionAsync);
+            builder.Use(reverseConnectionService.HandleConnectionAsync);
+
+            return builder;
+        }
+
+        /// <summary>
         /// 映射反向代理回退
         /// </summary>
         /// <param name="endpoints"></param>

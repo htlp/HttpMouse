@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Connections;
+﻿using Microsoft.AspNetCore.Connections.Features;
 using System;
 using System.IO;
 using System.Threading;
@@ -11,19 +11,20 @@ namespace HttpMouse.Implementions
     /// </summary>
     sealed class ReverseConnection : Stream
     {
-        private readonly ConnectionContext context;
         private readonly Stream readStream;
         private readonly Stream wirteStream;
+        private readonly IConnectionLifetimeFeature lifetimeFeature;
 
         /// <summary>
         /// 反向连接
         /// </summary>
-        /// <param name="context">连接上下文</param>
-        public ReverseConnection(ConnectionContext context)
+        /// <param name="lifetimeFeature"></param>
+        /// <param name="transportFeature"></param>
+        public ReverseConnection(IConnectionLifetimeFeature lifetimeFeature, IConnectionTransportFeature transportFeature)
         {
-            this.context = context;
-            this.readStream = context.Transport.Input.AsStream();
-            this.wirteStream = context.Transport.Output.AsStream();
+            this.readStream = transportFeature.Transport.Input.AsStream();
+            this.wirteStream = transportFeature.Transport.Output.AsStream();
+            this.lifetimeFeature = lifetimeFeature;
         }
 
         public override bool CanRead => true;
@@ -95,12 +96,12 @@ namespace HttpMouse.Implementions
 
         protected override void Dispose(bool disposing)
         {
-            this.context.Abort();
+            this.lifetimeFeature.Abort();
         }
 
         public override ValueTask DisposeAsync()
         {
-            this.context.Abort();
+            this.lifetimeFeature.Abort();
             return ValueTask.CompletedTask;
         }
     }
