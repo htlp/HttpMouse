@@ -1,12 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <PackageReference Include="AwaitableCompletionSource" Version="1.0.0" />
-    <PackageReference Include="Yarp.ReverseProxy" Version="1.0.0-preview.12.21328.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="AwaitableCompletionSource" Version="1.0.0" />
+		<PackageReference Include="Yarp.ReverseProxy" Version="1.0.0-preview.12.21328.2" />
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 
 </Project>
