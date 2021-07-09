@@ -1,10 +1,10 @@
-﻿using HttpMouse.Abstractions;
+﻿using HttpMouse;
+using HttpMouse.Abstractions;
 using HttpMouse.Implementions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
 using System.Net.Http;
@@ -13,8 +13,11 @@ using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
 using Yarp.ReverseProxy.Transforms;
 
-namespace HttpMouse
+namespace Microsoft.Extensions.DependencyInjection
 {
+    /// <summary>
+    /// HttpMouse的相关扩展
+    /// </summary>
     public static class HttpMouseExtensions
     {
         /// <summary>
