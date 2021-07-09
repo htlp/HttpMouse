@@ -18,7 +18,7 @@ namespace HttpMouse
                 .CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>().UseKestrelReverseConnection();
+                    webBuilder.UseStartup<Startup>();
                 })
                 .UseSerilog((hosting, logger) =>
                 {
