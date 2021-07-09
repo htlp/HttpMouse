@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace HttpMouse.Client
 {
+    /// <summary>
+    /// 客户端工厂
+    /// </summary>
     sealed class HttpMouseClientFactory : IHttpMouseClientFactory
     {
         private const string CLIENT_DOMAIN = "ClientDomain";
@@ -13,11 +16,20 @@ namespace HttpMouse.Client
         private const string SERVER_KEY = "ServerKey";
         private readonly IOptionsMonitor<HttpMouseClientOptions> options;
 
+        /// <summary>
+        /// 客户端工厂
+        /// </summary>
+        /// <param name="options"></param>
         public HttpMouseClientFactory(IOptionsMonitor<HttpMouseClientOptions> options)
         {
             this.options = options;
         }
 
+        /// <summary>
+        /// 创建客户端实例
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<IHttpMouseClient> CreateAsync(CancellationToken cancellationToken)
         {
             var opt = this.options.CurrentValue;

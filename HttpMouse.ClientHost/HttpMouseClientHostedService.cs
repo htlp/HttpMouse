@@ -27,7 +27,9 @@ namespace HttpMouse.ClientHost
                 try
                 {
                     using var client = await this.httpMouseClientFactory.CreateAsync(stoppingToken);
-                    this.logger.LogInformation($"连接到服务器成功，数据传输中");
+                    this.logger.LogInformation($"连接到服务器成功");
+
+                    this.logger.LogInformation($"等待数据传输..");
                     await client.TransportAsync(stoppingToken);
                     this.logger.LogInformation($"数据传输结束");
                 }

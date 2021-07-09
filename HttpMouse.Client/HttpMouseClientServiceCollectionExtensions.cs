@@ -1,9 +1,38 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace HttpMouse.Client
 {
     public static class HttpMouseClientServiceCollectionExtensions
     {
+        /// <summary>
+        /// 添加HttpMouseClient工厂
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configureOptions"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddHttpMouseClient(this IServiceCollection services, Action<HttpMouseClientOptions> configureOptions)
+        {
+            return services.AddHttpMouseClient().Configure(configureOptions);
+        }
+
+        /// <summary>
+        /// 添加HttpMouseClient工厂
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configuration"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddHttpMouseClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            return services.AddHttpMouseClient().Configure<HttpMouseClientOptions>(configuration);
+        }
+
+        /// <summary>
+        /// 添加HttpMouseClient工厂
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
         public static IServiceCollection AddHttpMouseClient(this IServiceCollection services)
         {
             services
@@ -11,7 +40,6 @@ namespace HttpMouse.Client
                 .ValidateDataAnnotations();
 
             return services
-                .AddLogging()
                 .AddSingleton<IHttpMouseClientFactory, HttpMouseClientFactory>();
         }
     }
