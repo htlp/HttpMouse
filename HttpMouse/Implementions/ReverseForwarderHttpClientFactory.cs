@@ -13,22 +13,22 @@ namespace HttpMouse.Implementions
     /// <summary>
     /// 反向连接的HttpClient工厂
     /// </summary>
-    sealed class ReverseHttpClientFactory : IForwarderHttpClientFactory, IDisposable
+    sealed class ReverseForwarderHttpClientFactory : IForwarderHttpClientFactory, IDisposable
     {
         private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
 
         private readonly SocketsHttpHandler httpHandler;
         private readonly IReverseConnectionService reverseConnectionService;
-        private readonly ILogger<ReverseHttpClientFactory> logger;
+        private readonly ILogger<ReverseForwarderHttpClientFactory> logger;
 
         /// <summary>
         /// 反向连接的HttpClient工厂
         /// </summary>
         /// <param name="reverseConnectionService"></param>
         /// <param name="logger"></param>
-        public ReverseHttpClientFactory(
+        public ReverseForwarderHttpClientFactory(
             IReverseConnectionService reverseConnectionService,
-            ILogger<ReverseHttpClientFactory> logger)
+            ILogger<ReverseForwarderHttpClientFactory> logger)
         {
             this.reverseConnectionService = reverseConnectionService;
             this.logger = logger;

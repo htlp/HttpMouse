@@ -30,7 +30,7 @@ namespace HttpMouse
                 .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
                 .AddSingleton<IMainConnectionService, MainConnectionService>()
                 .AddSingleton<IReverseConnectionService, ReverseConnectionService>()
-                .AddSingleton<IForwarderHttpClientFactory, ReverseHttpClientFactory>();
+                .AddSingleton<IForwarderHttpClientFactory, ReverseForwarderHttpClientFactory>();
         }
 
         /// <summary>
