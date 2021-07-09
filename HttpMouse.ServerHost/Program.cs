@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace HttpMouse
+namespace HttpMouse.ServerHost
 {
     class Program
     {

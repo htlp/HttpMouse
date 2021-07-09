@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "HttpMouse": {
+    "HttpMouse.ServerHost": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

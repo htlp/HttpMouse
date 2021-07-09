@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse.Client", "HttpMou
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse.ClientHost", "HttpMouse.ClientHost\HttpMouse.ClientHost.csproj", "{5610D3BF-3800-4CCD-9227-7087D7C1DD67}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse.ServerHost", "HttpMouse.ServerHost\HttpMouse.ServerHost.csproj", "{1D99B9FB-6998-45FB-87D1-167B87D07AC4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{5610D3BF-3800-4CCD-9227-7087D7C1DD67}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5610D3BF-3800-4CCD-9227-7087D7C1DD67}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5610D3BF-3800-4CCD-9227-7087D7C1DD67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D99B9FB-6998-45FB-87D1-167B87D07AC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D99B9FB-6998-45FB-87D1-167B87D07AC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D99B9FB-6998-45FB-87D1-167B87D07AC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D99B9FB-6998-45FB-87D1-167B87D07AC4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

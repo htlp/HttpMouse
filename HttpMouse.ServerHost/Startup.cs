@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace HttpMouse
+namespace HttpMouse.ServerHost
 {
     sealed class Startup
     {

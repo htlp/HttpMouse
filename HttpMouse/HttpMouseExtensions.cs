@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Yarp.ReverseProxy.Configuration;
@@ -14,7 +15,7 @@ using Yarp.ReverseProxy.Transforms;
 
 namespace HttpMouse
 {
-    static class HttpMouseExtensions
+    public static class HttpMouseExtensions
     {
         /// <summary>
         /// 添加HttpMouse
@@ -44,6 +45,17 @@ namespace HttpMouse
         public static IServiceCollection ConfigureHttpMouse(this IServiceCollection services, IConfiguration configuration)
         {
             return services.Configure<HttpMouseOptions>(configuration);
+        }
+
+        /// <summary>
+        /// 配置HttpMouse
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configureOptions"></param>
+        /// <returns></returns>
+        public static IServiceCollection ConfigureHttpMouse(this IServiceCollection services, Action<HttpMouseOptions> configureOptions)
+        {
+            return services.Configure(configureOptions);
         }
 
 

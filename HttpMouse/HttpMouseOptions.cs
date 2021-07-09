@@ -3,7 +3,10 @@ using Yarp.ReverseProxy.Forwarder;
 
 namespace HttpMouse
 {
-    sealed class HttpMouseOptions
+    /// <summary>
+    /// HttpMouse选项
+    /// </summary>
+    public class HttpMouseOptions
     {
         /// <summary>
         /// 密钥
@@ -18,12 +21,12 @@ namespace HttpMouse
         /// <summary>
         /// 错误返回
         /// </summary>
-        public ServerFallback Fallback { get; set; } = new ServerFallback();
+        public FallbackConfig Fallback { get; set; } = new FallbackConfig();
 
         /// <summary>
-        /// 错误回退
+        /// 错误回退配置
         /// </summary>
-        public class ServerFallback
+        public class FallbackConfig
         {
             /// <summary>
             /// 状态码
