@@ -4,7 +4,7 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HttpMouse.Client
+namespace HttpMouse.Client.Implementions
 {
     /// <summary>
     /// 客户端工厂

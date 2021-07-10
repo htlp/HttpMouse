@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HttpMouse.Client
+namespace HttpMouse.Client.Implementions
 {
     /// <summary>
     /// 客户端
@@ -78,7 +78,7 @@ namespace HttpMouse.Client
         /// <summary>
         /// 绑定上下游的连接进行双向传输
         /// </summary> 
-        /// <param name="reverseConnectionId"></param>
+        /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         private async void TransportAsync(uint connectionId, CancellationToken cancellationToken)
         {

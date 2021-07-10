@@ -7,9 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse", "HttpMouse\Http
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse.Client", "HttpMouse.Client\HttpMouse.Client.csproj", "{CB280978-D61C-4833-B907-044CEF3A914D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse.ClientHost", "HttpMouse.ClientHost\HttpMouse.ClientHost.csproj", "{5610D3BF-3800-4CCD-9227-7087D7C1DD67}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse.ClientHost", "samples\HttpMouse.ClientHost\HttpMouse.ClientHost.csproj", "{DCA3F32A-7E3A-44C6-8FA3-35DB695BB9ED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse.ServerHost", "HttpMouse.ServerHost\HttpMouse.ServerHost.csproj", "{1D99B9FB-6998-45FB-87D1-167B87D07AC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMouse.ServerHost", "samples\HttpMouse.ServerHost\HttpMouse.ServerHost.csproj", "{C71A773E-64C2-479D-832A-F80F61F80C83}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{3E09F4C8-86A0-427D-BC27-710572D61400}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,17 +27,21 @@ Global
 		{CB280978-D61C-4833-B907-044CEF3A914D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB280978-D61C-4833-B907-044CEF3A914D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB280978-D61C-4833-B907-044CEF3A914D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5610D3BF-3800-4CCD-9227-7087D7C1DD67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5610D3BF-3800-4CCD-9227-7087D7C1DD67}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5610D3BF-3800-4CCD-9227-7087D7C1DD67}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5610D3BF-3800-4CCD-9227-7087D7C1DD67}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1D99B9FB-6998-45FB-87D1-167B87D07AC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1D99B9FB-6998-45FB-87D1-167B87D07AC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1D99B9FB-6998-45FB-87D1-167B87D07AC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1D99B9FB-6998-45FB-87D1-167B87D07AC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCA3F32A-7E3A-44C6-8FA3-35DB695BB9ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCA3F32A-7E3A-44C6-8FA3-35DB695BB9ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCA3F32A-7E3A-44C6-8FA3-35DB695BB9ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCA3F32A-7E3A-44C6-8FA3-35DB695BB9ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C71A773E-64C2-479D-832A-F80F61F80C83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C71A773E-64C2-479D-832A-F80F61F80C83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C71A773E-64C2-479D-832A-F80F61F80C83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C71A773E-64C2-479D-832A-F80F61F80C83}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DCA3F32A-7E3A-44C6-8FA3-35DB695BB9ED} = {3E09F4C8-86A0-427D-BC27-710572D61400}
+		{C71A773E-64C2-479D-832A-F80F61F80C83} = {3E09F4C8-86A0-427D-BC27-710572D61400}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A7445E87-EBB8-45A9-BF16-D2C841D1B7A2}

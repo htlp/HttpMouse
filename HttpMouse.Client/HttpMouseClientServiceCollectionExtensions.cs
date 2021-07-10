@@ -1,9 +1,13 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using HttpMouse.Client.Implementions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
 namespace HttpMouse.Client
 {
+    /// <summary>
+    /// HttpMouseClient扩展
+    /// </summary>
     public static class HttpMouseClientServiceCollectionExtensions
     {
         /// <summary>

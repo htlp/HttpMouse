@@ -20,13 +20,6 @@ namespace HttpMouse
         /// </summary>
         Uri Upstream { get; }
 
-
-        /// <summary>
-        /// 转换为ClusterConfig
-        /// </summary>
-        /// <returns></returns>
-        ClusterConfig ToClusterConfig();
-
         /// <summary>
         /// 转换为RouteConfig
         /// </summary>
@@ -34,12 +27,19 @@ namespace HttpMouse
         RouteConfig ToRouteConfig();
 
         /// <summary>
+        /// 转换为ClusterConfig
+        /// </summary>
+        /// <returns></returns>
+        ClusterConfig ToClusterConfig();
+
+
+        /// <summary>
         /// 发送创建反向连接指令
         /// </summary> 
-        /// <param name="reverseConnectionId"></param>
+        /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task SendCreateReverseConnectionAsync(uint reverseConnectionId, CancellationToken cancellationToken);
+        Task SendCreateReverseConnectionAsync(uint connectionId, CancellationToken cancellationToken);
 
         /// <summary>
         /// 由于异常而关闭

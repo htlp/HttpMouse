@@ -11,49 +11,39 @@ using System.Threading.Tasks;
 namespace HttpMouse.Implementions
 {
     /// <summary>
-    /// 主连接服务
+    /// 主连接处理者
     /// </summary> 
-    sealed class MainConnectionService : IMainConnectionService
+    sealed class MainConnectionHandler : IMainConnectionHandler
     {
         private const string SERVER_KEY = "ServerKey";
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
+
         private readonly IMainConnectionAuthenticator authenticator;
         private readonly IOptionsMonitor<HttpMouseOptions> options;
-        private readonly ILogger<MainConnectionService> logger;
+        private readonly ILogger<MainConnectionHandler> logger;
         private readonly ConcurrentDictionary<string, IMainConnection> connections = new();
 
 
         /// <summary>
         /// 主连接变化后
         /// </summary>
-        public event Action<IMainConnection[]>? ConnectionChanged;
+        public event Action<IMainConnection[]>? ConnectionsChanged;
 
         /// <summary>
-        /// 主连接服务
+        /// 主连接处理者
         /// </summary>
         /// <param name="authenticator"></param>
         /// <param name="options"></param>
         /// <param name="logger"></param>
-        public MainConnectionService(
+        public MainConnectionHandler(
             IMainConnectionAuthenticator authenticator,
             IOptionsMonitor<HttpMouseOptions> options,
-            ILogger<MainConnectionService> logger)
+            ILogger<MainConnectionHandler> logger)
         {
             this.authenticator = authenticator;
             this.options = options;
             this.logger = logger;
-        }
-
-        /// <summary>
-        /// 尝试获取连接 
-        /// </summary>
-        /// <param name="clientDomain"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public bool TryGetValue(string clientDomain, [MaybeNullWhen(false)] out IMainConnection value)
-        {
-            return this.connections.TryGetValue(clientDomain, out value);
         }
 
         /// <summary>
@@ -95,13 +85,24 @@ namespace HttpMouse.Implementions
 
 
             this.logger.LogInformation($"{connection}连接过来");
-            this.ConnectionChanged?.Invoke(this.connections.Values.ToArray());
+            this.ConnectionsChanged?.Invoke(this.connections.Values.ToArray());
 
             await connection.WaitingCloseAsync();
 
             this.logger.LogInformation($"{connection}断开连接");
             this.connections.TryRemove(clientDomain, out _);
-            this.ConnectionChanged?.Invoke(this.connections.Values.ToArray());
+            this.ConnectionsChanged?.Invoke(this.connections.Values.ToArray());
+        }
+
+        /// <summary>
+        /// 尝试获取连接 
+        /// </summary>
+        /// <param name="clientDomain"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public bool TryGetValue(string clientDomain, [MaybeNullWhen(false)] out IMainConnection value)
+        {
+            return this.connections.TryGetValue(clientDomain, out value);
         }
     }
 }

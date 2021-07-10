@@ -2,18 +2,8 @@
 	<PropertyGroup>
 		<Version>1.0.0</Version>
 		<Nullable>enable</Nullable>
-		<TargetFrameworks>net5.0;net6.0</TargetFrameworks>
-		<ANCMPreConfiguredForIIS>true</ANCMPreConfiguredForIIS>
-		<IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
-		<Description>公网反向代理到局域网的web服务器</Description> 
-	</PropertyGroup>
-	
-	<PropertyGroup Condition="'$(TargetFramework)' == 'net6.0'">
-		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-	</PropertyGroup> 
-
-	<PropertyGroup Condition="'$(Configuration)'=='Release'">
-		<DebugType>none</DebugType>
-		<DebugSymbols>false</DebugSymbols>
-	</PropertyGroup>
+		<TargetFramework>net5.0</TargetFramework>
+		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+		<Description>http公网反向代理到内网的服务端与客户端库</Description> 
+	</PropertyGroup>	 
 </Project>

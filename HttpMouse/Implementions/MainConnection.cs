@@ -35,6 +35,7 @@ namespace HttpMouse.Implementions
         /// <param name="domain"></param>
         /// <param name="upstream"></param>
         /// <param name="webSocket"></param>
+        /// <param name="options"></param>
         public MainConnection(
             string domain,
             Uri upstream,
@@ -92,13 +93,13 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 发送创建反向连接指令
         /// </summary> 
-        /// <param name="reverseConnectionId"></param>
+        /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task SendCreateReverseConnectionAsync(uint reverseConnectionId, CancellationToken cancellationToken)
+        public Task SendCreateReverseConnectionAsync(uint connectionId, CancellationToken cancellationToken)
         {
             var channelIdBuffer = new byte[sizeof(uint)];
-            BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, reverseConnectionId);
+            BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, connectionId);
             return this.webSocket.SendAsync(channelIdBuffer, WebSocketMessageType.Binary, true, cancellationToken);
         }
 

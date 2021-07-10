@@ -13,10 +13,10 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 内存配置提供者
         /// </summary>
-        /// <param name="mainConnectionService">主连接服务</param>
-        public MomoryConfigProvider(IMainConnectionService mainConnectionService)
+        /// <param name="mainConnectionHandler">主连接处理者</param>
+        public MomoryConfigProvider(IMainConnectionHandler mainConnectionHandler)
         {
-            mainConnectionService.ConnectionChanged += MainConnectionChanged;
+            mainConnectionHandler.ConnectionsChanged += MainConnectionChanged;
         }
 
         /// <summary>

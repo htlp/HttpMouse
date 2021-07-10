@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace HttpMouse.ServerHost
@@ -21,9 +23,8 @@ namespace HttpMouse.ServerHost
         /// <param name="services"></param>
         public void ConfigureServices(IServiceCollection services)
         {
-            services
-                .AddHttpMouse()
-                .ConfigureHttpMouse(this.Configuration.GetSection("HttpMouse"));
+            services.AddHttpMouse(this.Configuration.GetSection("HttpMouse"));
+            services.Configure<FallbackOptions>(this.Configuration.GetSection("Fallback"));
         }
 
         /// <summary>
@@ -39,12 +40,19 @@ namespace HttpMouse.ServerHost
             {
                 app.UseSerilogRequestLogging();
             }
-             
+
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapReverseProxy();
-                endpoints.MapReverseProxyFallback();
+
+                endpoints.MapFallback(context =>
+                {
+                    var fallback = context.RequestServices.GetRequiredService<IOptionsMonitor<FallbackOptions>>().CurrentValue;
+                    context.Response.StatusCode = fallback.StatusCode;
+                    context.Response.ContentType = fallback.ContentType;
+                    return context.Response.SendFileAsync(fallback.ContentFile);
+                });
             });
         }
     }

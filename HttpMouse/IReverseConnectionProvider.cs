@@ -7,17 +7,17 @@ using System.Threading.Tasks;
 namespace HttpMouse
 {
     /// <summary>
-    /// 返回连接服务接口
+    /// 反向连接提值者
     /// </summary>
-    public interface IReverseConnectionService
+    public interface IReverseConnectionProvider
     {
         /// <summary>
         /// 创建一个反向连接
         /// </summary>
         /// <param name="clientDomain">客户端域名</param>
-        /// <param name="cancellation"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        ValueTask<Stream> CreateReverseConnectionAsync(string clientDomain, CancellationToken cancellation);
+        ValueTask<Stream> CreateAsync(string clientDomain, CancellationToken cancellationToken);
 
         /// <summary>
         /// 处理连接

@@ -2,10 +2,7 @@
 using HttpMouse.Abstractions;
 using HttpMouse.Implementions;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -21,61 +18,52 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class HttpMouseExtensions
     {
         /// <summary>
-        /// 添加HttpMouse
-        /// </summary>
-        /// <param name="services"></param>
-        /// <returns></returns>
-        public static IServiceCollection AddHttpMouse(this IServiceCollection services)
-        {
-            services
-               .AddReverseProxy()
-               .AddClientDomainOptionsTransform();
-
-            return services
-                .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
-                .AddSingleton<IMainConnectionService, MainConnectionService>()
-                .AddSingleton<IMainConnectionAuthenticator, MainConnectionAuthenticator>()
-                .AddSingleton<IReverseConnectionService, ReverseConnectionService>()
-                .AddSingleton<IForwarderHttpClientFactory, ReverseForwarderHttpClientFactory>();
-        }
-
-        /// <summary>
-        /// 配置HttpMouse
+        /// 注册HttpMouse相关服务
         /// </summary>
         /// <param name="services"></param>
         /// <param name="configuration"></param>
         /// <returns></returns>
-        public static IServiceCollection ConfigureHttpMouse(this IServiceCollection services, IConfiguration configuration)
+        public static IReverseProxyBuilder AddHttpMouse(this IServiceCollection services, IConfiguration configuration)
         {
-            return services.Configure<HttpMouseOptions>(configuration);
+            return services.Configure<HttpMouseOptions>(configuration).AddHttpMouse();
         }
 
         /// <summary>
-        /// 配置HttpMouse
+        /// 注册HttpMouse相关服务
         /// </summary>
         /// <param name="services"></param>
         /// <param name="configureOptions"></param>
         /// <returns></returns>
-        public static IServiceCollection ConfigureHttpMouse(this IServiceCollection services, Action<HttpMouseOptions> configureOptions)
+        public static IReverseProxyBuilder AddHttpMouse(this IServiceCollection services, Action<HttpMouseOptions> configureOptions)
         {
-            return services.Configure(configureOptions);
+            return services.Configure(configureOptions).AddHttpMouse();
         }
 
-
         /// <summary>
-        /// 添加ClientDomain的options
+        /// 注册HttpMouse相关服务
         /// </summary>
-        /// <param name="builder"></param>
+        /// <param name="services"></param>
         /// <returns></returns>
-        private static IReverseProxyBuilder AddClientDomainOptionsTransform(this IReverseProxyBuilder builder)
+        public static IReverseProxyBuilder AddHttpMouse(this IServiceCollection services)
         {
             var optionsKey = new HttpRequestOptionsKey<string>("ClientDomain");
-            return builder.AddTransforms(ctx => ctx.AddRequestTransform(request =>
-            {
-                var clientDomain = request.HttpContext.Request.Host.Host;
-                request.ProxyRequest.Options.Set(optionsKey, clientDomain);
-                return ValueTask.CompletedTask;
-            }));
+            var builder = services
+                .AddReverseProxy()
+                .AddTransforms(ctx => ctx.AddRequestTransform(request =>
+                {
+                    var clientDomain = request.HttpContext.Request.Host.Host;
+                    request.ProxyRequest.Options.Set(optionsKey, clientDomain);
+                    return ValueTask.CompletedTask;
+                }));
+
+            services
+                .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
+                .AddSingleton<IMainConnectionHandler, MainConnectionHandler>()
+                .AddSingleton<IMainConnectionAuthenticator, MainConnectionAuthenticator>()
+                .AddSingleton<IReverseConnectionProvider, ReverseConnectionProvider>()
+                .AddSingleton<IForwarderHttpClientFactory, ReverseForwarderHttpClientFactory>();
+
+            return builder;
         }
 
         /// <summary>
@@ -85,29 +73,14 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IApplicationBuilder UseHttpMouse(this IApplicationBuilder builder)
         {
-            var mainConnectionService = builder.ApplicationServices.GetRequiredService<IMainConnectionService>();
-            var reverseConnectionService = builder.ApplicationServices.GetRequiredService<IReverseConnectionService>();
+            var mainConnectionHandler = builder.ApplicationServices.GetRequiredService<IMainConnectionHandler>();
+            var reverseConnectionProvider = builder.ApplicationServices.GetRequiredService<IReverseConnectionProvider>();
 
             builder.UseWebSockets();
-            builder.Use(mainConnectionService.HandleConnectionAsync);
-            builder.Use(reverseConnectionService.HandleConnectionAsync);
+            builder.Use(mainConnectionHandler.HandleConnectionAsync);
+            builder.Use(reverseConnectionProvider.HandleConnectionAsync);
 
             return builder;
-        }
-
-        /// <summary>
-        /// 映射反向代理回退
-        /// </summary>
-        /// <param name="endpoints"></param>
-        public static void MapReverseProxyFallback(this IEndpointRouteBuilder endpoints)
-        {
-            endpoints.MapFallback(context =>
-            {
-                var fallback = context.RequestServices.GetRequiredService<IOptionsMonitor<HttpMouseOptions>>().CurrentValue.Fallback;
-                context.Response.StatusCode = fallback.StatusCode;
-                context.Response.ContentType = fallback.ContentType;
-                return context.Response.SendFileAsync(fallback.ContentFile);
-            });
         }
     }
 }

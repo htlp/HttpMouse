@@ -15,22 +15,22 @@ namespace HttpMouse.Implementions
     /// </summary>
     sealed class ReverseForwarderHttpClientFactory : IForwarderHttpClientFactory, IDisposable
     {
-        private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
-
-        private readonly SocketsHttpHandler httpHandler;
-        private readonly IReverseConnectionService reverseConnectionService;
+        private readonly IReverseConnectionProvider reverseConnectionProvider;
         private readonly ILogger<ReverseForwarderHttpClientFactory> logger;
+
+        private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
+        private readonly SocketsHttpHandler httpHandler;
 
         /// <summary>
         /// 反向连接的HttpClient工厂
         /// </summary>
-        /// <param name="reverseConnectionService"></param>
+        /// <param name="reverseConnectionProvider"></param>
         /// <param name="logger"></param>
         public ReverseForwarderHttpClientFactory(
-            IReverseConnectionService reverseConnectionService,
+            IReverseConnectionProvider reverseConnectionProvider,
             ILogger<ReverseForwarderHttpClientFactory> logger)
         {
-            this.reverseConnectionService = reverseConnectionService;
+            this.reverseConnectionProvider = reverseConnectionProvider;
             this.logger = logger;
 
             this.httpHandler = new SocketsHttpHandler
@@ -62,7 +62,7 @@ namespace HttpMouse.Implementions
 
             try
             {
-                return await this.reverseConnectionService.CreateReverseConnectionAsync(clientDomain, cancellation);
+                return await this.reverseConnectionProvider.CreateAsync(clientDomain, cancellation);
             }
             catch (Exception ex)
             {

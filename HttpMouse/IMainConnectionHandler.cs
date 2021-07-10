@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 namespace HttpMouse
 {
     /// <summary>
-    /// 主连接服务接口
+    /// 主连接处理者
     /// </summary>
-    public interface IMainConnectionService
+    public interface IMainConnectionHandler
     {
         /// <summary>
         /// 主连接变化后
         /// </summary>
-        event Action<IMainConnection[]>? ConnectionChanged;
+        event Action<IMainConnection[]>? ConnectionsChanged;
 
         /// <summary>
         /// 处理连接
