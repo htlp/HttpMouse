@@ -14,7 +14,7 @@ namespace HttpMouse.Implementions
     /// </summary>
     sealed class ReverseConnectionProvider : IReverseConnectionProvider
     {
-        private readonly IMainConnectionHandler mainConnectionHandler;
+        private readonly IHttpMouseClientHandler mainConnectionHandler;
         private readonly ILogger<ReverseConnectionProvider> logger;
 
         private uint _connectionId = 0;
@@ -27,7 +27,7 @@ namespace HttpMouse.Implementions
         /// <param name="mainConnectionHandler"></param>
         /// <param name="logger"></param>
         public ReverseConnectionProvider(
-            IMainConnectionHandler mainConnectionHandler,
+            IHttpMouseClientHandler mainConnectionHandler,
             ILogger<ReverseConnectionProvider> logger)
         {
             this.mainConnectionHandler = mainConnectionHandler;
@@ -54,7 +54,7 @@ namespace HttpMouse.Implementions
 
             try
             {
-                await mainConnection.SendCreateReverseConnectionAsync(connectionId, cancellation);
+                await mainConnection.SendCreateConnectionAsync(connectionId, cancellation);
                 return await connectionAwaiter.Task;
             }
             catch (Exception ex)

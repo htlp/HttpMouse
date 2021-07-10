@@ -26,7 +26,7 @@ namespace HttpMouse.Implementions
         /// </summary>
         /// <param name="mainConnection"></param>
         /// <returns></returns>
-        public virtual ClusterConfig Create(IMainConnection mainConnection)
+        public virtual ClusterConfig Create(IHttpMouseClient mainConnection)
         {
             var domain = mainConnection.Domain;
             var address = mainConnection.Upstream.ToString();

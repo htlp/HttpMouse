@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 namespace HttpMouse
 {
     /// <summary>
-    /// 主连接处理者
+    /// 客户端处理者
     /// </summary>
-    public interface IMainConnectionHandler
+    public interface IHttpMouseClientHandler
     {
         /// <summary>
-        /// 主连接变化后
+        /// 客户端变化后事件
         /// </summary>
-        event Action<IMainConnection[]>? ConnectionsChanged;
+        event Action<IHttpMouseClient[]>? ClientsChanged;
 
         /// <summary>
-        /// 处理连接
+        /// 处理客户端连接
         /// </summary>
         /// <param name="context"></param>
         /// <param name="next"></param>
@@ -24,11 +24,11 @@ namespace HttpMouse
         Task HandleConnectionAsync(HttpContext context, Func<Task> next);
 
         /// <summary>
-        /// 通过客户端绑定的域名尝试获取主连接 
+        /// 通过客户端绑定的域名尝试获取客户端
         /// </summary>
         /// <param name="clientDomain">客户端绑定的域名</param>
         /// <param name="value"></param>
         /// <returns></returns>
-        bool TryGetValue(string clientDomain, [MaybeNullWhen(false)] out IMainConnection value);
+        bool TryGetValue(string clientDomain, [MaybeNullWhen(false)] out IHttpMouseClient value);
     }
 }

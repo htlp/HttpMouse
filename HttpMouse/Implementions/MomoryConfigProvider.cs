@@ -19,11 +19,11 @@ namespace HttpMouse.Implementions
         /// <param name="routeConfigProvider"></param>
         /// <param name="clusterConfigProvider"></param> 
         public MomoryConfigProvider(
-            IMainConnectionHandler mainConnectionHandler,
+            IHttpMouseClientHandler mainConnectionHandler,
             IRouteConfigProvider routeConfigProvider,
             IClusterConfigProvider clusterConfigProvider)
         {
-            mainConnectionHandler.ConnectionsChanged += MainConnectionChanged;
+            mainConnectionHandler.ClientsChanged += MainConnectionChanged;
             this.routeConfigProvider = routeConfigProvider;
             this.clusterConfigProvider = clusterConfigProvider;
         }
@@ -32,7 +32,7 @@ namespace HttpMouse.Implementions
         /// 连接变化后
         /// </summary>
         /// <param name="connections"></param>
-        private void MainConnectionChanged(IMainConnection[] connections)
+        private void MainConnectionChanged(IHttpMouseClient[] connections)
         {
             var oldConfig = this.config;
 

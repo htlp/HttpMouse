@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 namespace HttpMouse
 {
     /// <summary>
-    /// 定义主连接
+    /// 客户端
     /// </summary>
-    public interface IMainConnection
+    public interface IHttpMouseClient
     {
         /// <summary>
         /// 获取绑定的域名
@@ -17,7 +17,12 @@ namespace HttpMouse
         /// <summary>
         /// 获取上游地址
         /// </summary>
-        Uri Upstream { get; } 
+        Uri Upstream { get; }
+
+        /// <summary>
+        /// 获取输入的秘钥
+        /// </summary>
+        string? Key { get; }
 
         /// <summary>
         /// 发送创建反向连接指令
@@ -25,7 +30,7 @@ namespace HttpMouse
         /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task SendCreateReverseConnectionAsync(uint connectionId, CancellationToken cancellationToken);
+        Task SendCreateConnectionAsync(uint connectionId, CancellationToken cancellationToken);
 
         /// <summary>
         /// 由于异常而关闭

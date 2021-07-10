@@ -60,8 +60,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IRouteConfigProvider, DefaultRouteConfigProvider>()
                 .AddSingleton<IClusterConfigProvider, DefaultClusterConfigProvider>()
                 .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
-                .AddSingleton<IMainConnectionHandler, MainConnectionHandler>()
-                .AddSingleton<IMainConnectionAuthenticator, MainConnectionAuthenticator>()
+                .AddSingleton<IHttpMouseClientHandler, HttpMouseClientHandler>()
+                .AddSingleton<IHttpMouseClientAuthenticator, HttpMouseClientAuthenticator>()
                 .AddSingleton<IReverseConnectionProvider, ReverseConnectionProvider>()
                 .AddSingleton<IForwarderHttpClientFactory, ReverseForwarderHttpClientFactory>();
 
@@ -75,7 +75,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IApplicationBuilder UseHttpMouse(this IApplicationBuilder builder)
         {
-            var mainConnectionHandler = builder.ApplicationServices.GetRequiredService<IMainConnectionHandler>();
+            var mainConnectionHandler = builder.ApplicationServices.GetRequiredService<IHttpMouseClientHandler>();
             var reverseConnectionProvider = builder.ApplicationServices.GetRequiredService<IReverseConnectionProvider>();
 
             builder.UseWebSockets();

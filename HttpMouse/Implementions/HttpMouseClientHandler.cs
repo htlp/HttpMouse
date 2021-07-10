@@ -10,32 +10,32 @@ using System.Threading.Tasks;
 namespace HttpMouse.Implementions
 {
     /// <summary>
-    /// 主连接处理者
+    /// 客户端处理者
     /// </summary> 
-    sealed class MainConnectionHandler : IMainConnectionHandler
+    sealed class HttpMouseClientHandler : IHttpMouseClientHandler
     {
         private const string SERVER_KEY = "ServerKey";
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
 
-        private readonly IMainConnectionAuthenticator authenticator;
-        private readonly ILogger<MainConnectionHandler> logger;
-        private readonly ConcurrentDictionary<string, IMainConnection> connections = new();
+        private readonly IHttpMouseClientAuthenticator authenticator;
+        private readonly ILogger<HttpMouseClientHandler> logger;
+        private readonly ConcurrentDictionary<string, IHttpMouseClient> clients = new();
 
 
         /// <summary>
-        /// 主连接变化后
+        /// 客户端变化后事件
         /// </summary>
-        public event Action<IMainConnection[]>? ConnectionsChanged;
+        public event Action<IHttpMouseClient[]>? ClientsChanged;
 
         /// <summary>
-        /// 主连接处理者
+        /// 客户端处理者
         /// </summary>
         /// <param name="authenticator"></param>
         /// <param name="logger"></param>
-        public MainConnectionHandler(
-            IMainConnectionAuthenticator authenticator,
-            ILogger<MainConnectionHandler> logger)
+        public HttpMouseClientHandler(
+            IHttpMouseClientAuthenticator authenticator,
+            ILogger<HttpMouseClientHandler> logger)
         {
             this.authenticator = authenticator;
             this.logger = logger;
@@ -60,33 +60,32 @@ namespace HttpMouse.Implementions
             }
 
             var clientDomain = domainValues.ToString();
+            var clientKey = keyValues.ToString();
             using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-            var connection = new MainConnection(clientDomain, clientUpstream, webSocket);
+            var client = new HttpMouseClient(clientDomain, clientUpstream, clientKey, webSocket);
 
-            // 密钥验证
-            var key = keyValues.ToString();
-            if (await this.authenticator.AuthenticateAsync(clientDomain, key) == false)
+            // 验证客户端
+            if (await this.authenticator.AuthenticateAsync(client) == false)
             {
-                await connection.CloseAsync("Key不正确");
+                await client.CloseAsync("Key不正确");
                 return;
             }
 
             // 验证连接唯一
-            if (this.connections.TryAdd(clientDomain, connection) == false)
+            if (this.clients.TryAdd(clientDomain, client) == false)
             {
-                await connection.CloseAsync($"已在其它地方存在{clientDomain}的连接实例");
+                await client.CloseAsync($"已在其它地方存在{clientDomain}的客户端实例");
                 return;
             }
 
+            this.logger.LogInformation($"{client}连接过来");
+            this.ClientsChanged?.Invoke(this.clients.Values.ToArray());
 
-            this.logger.LogInformation($"{connection}连接过来");
-            this.ConnectionsChanged?.Invoke(this.connections.Values.ToArray());
+            await client.WaitingCloseAsync();
 
-            await connection.WaitingCloseAsync();
-
-            this.logger.LogInformation($"{connection}断开连接");
-            this.connections.TryRemove(clientDomain, out _);
-            this.ConnectionsChanged?.Invoke(this.connections.Values.ToArray());
+            this.logger.LogInformation($"{client}断开连接");
+            this.clients.TryRemove(clientDomain, out _);
+            this.ClientsChanged?.Invoke(this.clients.Values.ToArray());
         }
 
         /// <summary>
@@ -95,9 +94,9 @@ namespace HttpMouse.Implementions
         /// <param name="clientDomain"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool TryGetValue(string clientDomain, [MaybeNullWhen(false)] out IMainConnection value)
+        public bool TryGetValue(string clientDomain, [MaybeNullWhen(false)] out IHttpMouseClient value)
         {
-            return this.connections.TryGetValue(clientDomain, out value);
+            return this.clients.TryGetValue(clientDomain, out value);
         }
     }
 }

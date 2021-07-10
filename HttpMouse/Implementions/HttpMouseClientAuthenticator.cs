@@ -5,17 +5,17 @@ using System.Threading.Tasks;
 namespace HttpMouse.Implementions
 {
     /// <summary>
-    /// 主连接认证者
+    /// 客户端认证者
     /// </summary>
-    sealed class MainConnectionAuthenticator : IMainConnectionAuthenticator
+    sealed class HttpMouseClientAuthenticator : IHttpMouseClientAuthenticator
     {
         private readonly IOptionsMonitor<HttpMouseOptions> options;
 
         /// <summary>
-        /// 主连接认证者
+        /// 客户端认证者
         /// </summary>
         /// <param name="options"></param>
-        public MainConnectionAuthenticator(IOptionsMonitor<HttpMouseOptions> options)
+        public HttpMouseClientAuthenticator(IOptionsMonitor<HttpMouseOptions> options)
         {
             this.options = options;
         }
@@ -23,13 +23,12 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 认证
         /// </summary>
-        /// <param name="clientDomain">客户端绑定的域名</param>
-        /// <param name="key">客户端输入的密钥</param>
+        /// <param name="httpMouseClient">客户端</param>
         /// <returns></returns>
-        public ValueTask<bool> AuthenticateAsync(string clientDomain, string? key)
+        public ValueTask<bool> AuthenticateAsync(IHttpMouseClient httpMouseClient)
         {
             var serverKey = this.options.CurrentValue.Key;
-            var result = serverKey == null || serverKey == key;
+            var result = serverKey == null || serverKey == httpMouseClient.Key;
             return ValueTask.FromResult(result);
         }
     }

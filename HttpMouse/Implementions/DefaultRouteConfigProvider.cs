@@ -13,7 +13,7 @@ namespace HttpMouse.Implementions
         /// </summary>
         /// <param name="mainConnection"></param>
         /// <returns></returns>
-        public virtual RouteConfig Create(IMainConnection mainConnection)
+        public virtual RouteConfig Create(IHttpMouseClient mainConnection)
         {
             var domain = mainConnection.Domain;
             return new RouteConfig

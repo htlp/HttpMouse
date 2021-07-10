@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 namespace HttpMouse.Implementions
 {
     /// <summary>
-    /// 基于websocket的主连接
+    /// 客户端
     /// </summary>
-    sealed class MainConnection : IMainConnection
+    sealed class HttpMouseClient : IHttpMouseClient
     {
-        private readonly WebSocket webSocket; 
+        private readonly WebSocket webSocket;
 
         /// <summary>
         /// 获取绑定的域名
@@ -25,20 +25,24 @@ namespace HttpMouse.Implementions
         public Uri Upstream { get; }
 
         /// <summary>
+        /// 获取输入的秘钥
+        /// </summary>
+        public string? Key { get; }
+
+        /// <summary>
         /// 基于websocket的主连接
         /// </summary>
         /// <param name="domain"></param>
         /// <param name="upstream"></param>
+        /// <param name="key"></param>
         /// <param name="webSocket"></param> 
-        public MainConnection(
-            string domain,
-            Uri upstream,
-            WebSocket webSocket)
+        public HttpMouseClient(string domain, Uri upstream, string? key, WebSocket webSocket)
         {
             this.Domain = domain;
             this.Upstream = upstream;
-            this.webSocket = webSocket; 
-        } 
+            this.Key = key;
+            this.webSocket = webSocket;
+        }
 
         /// <summary>
         /// 发送创建反向连接指令
@@ -46,7 +50,7 @@ namespace HttpMouse.Implementions
         /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task SendCreateReverseConnectionAsync(uint connectionId, CancellationToken cancellationToken)
+        public Task SendCreateConnectionAsync(uint connectionId, CancellationToken cancellationToken)
         {
             var channelIdBuffer = new byte[sizeof(uint)];
             BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, connectionId);

@@ -12,6 +12,6 @@ namespace HttpMouse
         /// </summary>
         /// <param name="mainConnection"></param>
         /// <returns></returns>
-        RouteConfig Create(IMainConnection mainConnection);
+        RouteConfig Create(IHttpMouseClient mainConnection);
     }
 }

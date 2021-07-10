@@ -12,6 +12,6 @@ namespace HttpMouse
         /// </summary>
         /// <param name="mainConnection"></param>
         /// <returns></returns>
-        ClusterConfig Create(IMainConnection mainConnection);
+        ClusterConfig Create(IHttpMouseClient mainConnection);
     }
 }
