@@ -8,7 +8,7 @@ namespace HttpMouse.Implementions
     /// <summary>
     /// 默认的集群配置提供者
     /// </summary>
-    public class DefaultClusterConfigProvider : IClusterConfigProvider
+    public class DefaultHttpMouseClusterProvider : IHttpMouseClusterProvider
     {
         private readonly IOptionsMonitor<HttpMouseOptions> options;
 
@@ -16,7 +16,7 @@ namespace HttpMouse.Implementions
         /// 集群配置提供者
         /// </summary>
         /// <param name="options"></param>
-        public DefaultClusterConfigProvider(IOptionsMonitor<HttpMouseOptions> options)
+        public DefaultHttpMouseClusterProvider(IOptionsMonitor<HttpMouseOptions> options)
         {
             this.options = options;
         }

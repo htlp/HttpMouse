@@ -5,7 +5,7 @@ namespace HttpMouse
     /// <summary>
     /// 集群配置提供者
     /// </summary>
-    public interface IClusterConfigProvider
+    public interface IHttpMouseClusterProvider
     {
         /// <summary>
         /// 创建集群

@@ -7,9 +7,9 @@ using Yarp.ReverseProxy.Configuration;
 namespace HttpMouse.Implementions
 {
     /// <summary>
-    /// 表示内存配置
+    /// HttpMouse代理配置
     /// </summary>
-    sealed class MemoryConfig : IProxyConfig
+    sealed class HttpMouseProxyConfig : IProxyConfig
     {
         private readonly CancellationTokenSource cancellationToken = new();
 
@@ -31,7 +31,7 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 内存配置
         /// </summary>
-        public MemoryConfig()
+        public HttpMouseProxyConfig()
             : this(Array.Empty<RouteConfig>(), Array.Empty<ClusterConfig>())
         {
         }
@@ -41,7 +41,7 @@ namespace HttpMouse.Implementions
         /// </summary>
         /// <param name="routes"></param>
         /// <param name="clusters"></param>
-        public MemoryConfig(IReadOnlyList<RouteConfig> routes, IReadOnlyList<ClusterConfig> clusters)
+        public HttpMouseProxyConfig(IReadOnlyList<RouteConfig> routes, IReadOnlyList<ClusterConfig> clusters)
         {
             this.Routes = routes;
             this.Clusters = clusters;

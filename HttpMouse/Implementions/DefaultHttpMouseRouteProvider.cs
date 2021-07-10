@@ -6,7 +6,7 @@ namespace HttpMouse.Implementions
     /// <summary>
     /// 默认的路由配置提供者
     /// </summary>
-    public class DefaultRouteConfigProvider : IRouteConfigProvider
+    public class DefaultHttpMouseRouteProvider : IHttpMouseRouteProvider
     {
         /// <summary>
         /// 创建路由

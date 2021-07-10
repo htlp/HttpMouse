@@ -4,13 +4,13 @@ using Yarp.ReverseProxy.Configuration;
 namespace HttpMouse.Implementions
 {
     /// <summary>
-    /// 表示内存配置提供者
+    /// httpMouse代理配置提供者
     /// </summary>
-    sealed class MomoryConfigProvider : IProxyConfigProvider
+    sealed class HttpMouseProxyConfigProvider : IProxyConfigProvider
     {
-        private volatile MemoryConfig config = new();
-        private readonly IRouteConfigProvider routeConfigProvider;
-        private readonly IClusterConfigProvider clusterConfigProvider;
+        private volatile HttpMouseProxyConfig config = new();
+        private readonly IHttpMouseRouteProvider routeConfigProvider;
+        private readonly IHttpMouseClusterProvider clusterConfigProvider;
 
         /// <summary>
         /// 内存配置提供者
@@ -18,10 +18,10 @@ namespace HttpMouse.Implementions
         /// <param name="httpMouseClientHandler"></param>
         /// <param name="routeConfigProvider"></param>
         /// <param name="clusterConfigProvider"></param> 
-        public MomoryConfigProvider(
+        public HttpMouseProxyConfigProvider(
             IHttpMouseClientHandler httpMouseClientHandler,
-            IRouteConfigProvider routeConfigProvider,
-            IClusterConfigProvider clusterConfigProvider)
+            IHttpMouseRouteProvider routeConfigProvider,
+            IHttpMouseClusterProvider clusterConfigProvider)
         {
             httpMouseClientHandler.ClientsChanged += HttpMouseClientsChanged;
             this.routeConfigProvider = routeConfigProvider;
@@ -38,7 +38,7 @@ namespace HttpMouse.Implementions
 
             var routes = clients.Select(item => this.routeConfigProvider.Create(item)).ToArray();
             var clusters = clients.Select(item => this.clusterConfigProvider.Create(item)).ToArray();
-            this.config = new MemoryConfig(routes, clusters);
+            this.config = new HttpMouseProxyConfig(routes, clusters);
 
             oldConfig.SignalChange();
         }

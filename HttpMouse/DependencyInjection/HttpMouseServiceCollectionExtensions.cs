@@ -1,7 +1,6 @@
 ﻿using HttpMouse;
 using HttpMouse.Abstractions;
 using HttpMouse.Implementions;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Net.Http;
@@ -13,7 +12,7 @@ using Yarp.ReverseProxy.Transforms;
 namespace Microsoft.Extensions.DependencyInjection
 {
     /// <summary>
-    /// HttpMouse的相关扩展
+    /// HttpMouse的服务注册扩展
     /// </summary>
     public static class HttpMouseServiceCollectionExtensions
     {
@@ -57,31 +56,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 }));
 
             services
-                .AddSingleton<IRouteConfigProvider, DefaultRouteConfigProvider>()
-                .AddSingleton<IClusterConfigProvider, DefaultClusterConfigProvider>()
-                .AddSingleton<IHttpMouseClientAuthenticator, DefaultHttpMouseClientAuthenticator>()
+                .AddSingleton<IHttpMouseRouteProvider, DefaultHttpMouseRouteProvider>()
+                .AddSingleton<IHttpMouseClusterProvider, DefaultHttpMouseClusterProvider>()
+                .AddSingleton<IHttpMouseClientVerifier, DefaultHttpMouseClientVerifier>()
 
                 .AddSingleton<IHttpMouseClientHandler, HttpMouseClientHandler>()
                 .AddSingleton<IReverseConnectionHandler, ReverseConnectionHandler>()
-                .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
-                .AddSingleton<IForwarderHttpClientFactory, ReverseForwarderHttpClientFactory>();
-
-            return builder;
-        }
-
-        /// <summary>
-        /// 使用httpMouse中间件
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        public static IApplicationBuilder UseHttpMouse(this IApplicationBuilder builder)
-        {
-            var httpMouseClientHandler = builder.ApplicationServices.GetRequiredService<IHttpMouseClientHandler>();
-            var reverseConnectionHandler = builder.ApplicationServices.GetRequiredService<IReverseConnectionHandler>();
-
-            builder.UseWebSockets();
-            builder.Use(httpMouseClientHandler.HandleConnectionAsync);
-            builder.Use(reverseConnectionHandler.HandleConnectionAsync);
+                .AddSingleton<IProxyConfigProvider, HttpMouseProxyConfigProvider>()
+                .AddSingleton<IForwarderHttpClientFactory, HttpMouseForwarderHttpClientFactory>();
 
             return builder;
         }

@@ -7,7 +7,7 @@ namespace HttpMouse.Implementions
     /// <summary>
     /// 默认的客户端认证者
     /// </summary>
-    public class DefaultHttpMouseClientAuthenticator : IHttpMouseClientAuthenticator
+    public class DefaultHttpMouseClientVerifier : IHttpMouseClientVerifier
     {
         private readonly IOptionsMonitor<HttpMouseOptions> options;
 
@@ -15,7 +15,7 @@ namespace HttpMouse.Implementions
         /// 客户端认证者
         /// </summary>
         /// <param name="options"></param>
-        public DefaultHttpMouseClientAuthenticator(IOptionsMonitor<HttpMouseOptions> options)
+        public DefaultHttpMouseClientVerifier(IOptionsMonitor<HttpMouseOptions> options)
         {
             this.options = options;
         }
@@ -25,7 +25,7 @@ namespace HttpMouse.Implementions
         /// </summary>
         /// <param name="httpMouseClient">客户端</param>
         /// <returns></returns>
-        public virtual ValueTask<bool> AuthenticateAsync(IHttpMouseClient httpMouseClient)
+        public virtual ValueTask<bool> VerifyAsync(IHttpMouseClient httpMouseClient)
         {
             var serverKey = this.options.CurrentValue.Key;
             var result = serverKey == null || serverKey == httpMouseClient.Key;

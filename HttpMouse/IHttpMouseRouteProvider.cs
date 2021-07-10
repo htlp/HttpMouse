@@ -5,7 +5,7 @@ namespace HttpMouse
     /// <summary>
     /// 路由配置提供者
     /// </summary>
-    public interface IRouteConfigProvider
+    public interface IHttpMouseRouteProvider
     {
         /// <summary>
         /// 创建路由

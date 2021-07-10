@@ -18,7 +18,7 @@ namespace HttpMouse.Implementions
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
 
-        private readonly IHttpMouseClientAuthenticator authenticator;
+        private readonly IHttpMouseClientVerifier verifier;
         private readonly ILogger<HttpMouseClientHandler> logger;
         private readonly ConcurrentDictionary<string, IHttpMouseClient> clients = new();
 
@@ -31,13 +31,13 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 客户端处理者
         /// </summary>
-        /// <param name="authenticator"></param>
+        /// <param name="verifier"></param> 
         /// <param name="logger"></param>
         public HttpMouseClientHandler(
-            IHttpMouseClientAuthenticator authenticator,
+            IHttpMouseClientVerifier verifier,
             ILogger<HttpMouseClientHandler> logger)
         {
-            this.authenticator = authenticator;
+            this.verifier = verifier;
             this.logger = logger;
         }
 
@@ -65,7 +65,7 @@ namespace HttpMouse.Implementions
             var client = new HttpMouseClient(clientDomain, clientUpstream, clientKey, webSocket);
 
             // 验证客户端
-            if (await this.authenticator.AuthenticateAsync(client) == false)
+            if (await this.verifier.VerifyAsync(client) == false)
             {
                 await client.CloseAsync("Key不正确");
                 return;
