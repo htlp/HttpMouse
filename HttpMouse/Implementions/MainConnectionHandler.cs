@@ -1,7 +1,6 @@
 ﻿using HttpMouse.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
@@ -20,7 +19,6 @@ namespace HttpMouse.Implementions
         private const string CLIENT_UP_STREAM = "ClientUpstream";
 
         private readonly IMainConnectionAuthenticator authenticator;
-        private readonly IOptionsMonitor<HttpMouseOptions> options;
         private readonly ILogger<MainConnectionHandler> logger;
         private readonly ConcurrentDictionary<string, IMainConnection> connections = new();
 
@@ -34,15 +32,12 @@ namespace HttpMouse.Implementions
         /// 主连接处理者
         /// </summary>
         /// <param name="authenticator"></param>
-        /// <param name="options"></param>
         /// <param name="logger"></param>
         public MainConnectionHandler(
             IMainConnectionAuthenticator authenticator,
-            IOptionsMonitor<HttpMouseOptions> options,
             ILogger<MainConnectionHandler> logger)
         {
             this.authenticator = authenticator;
-            this.options = options;
             this.logger = logger;
         }
 
@@ -66,7 +61,7 @@ namespace HttpMouse.Implementions
 
             var clientDomain = domainValues.ToString();
             using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-            var connection = new MainConnection(clientDomain, clientUpstream, webSocket, this.options);
+            var connection = new MainConnection(clientDomain, clientUpstream, webSocket);
 
             // 密钥验证
             var key = keyValues.ToString();

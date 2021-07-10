@@ -9,14 +9,23 @@ namespace HttpMouse.Implementions
     sealed class MomoryConfigProvider : IProxyConfigProvider
     {
         private volatile MemoryConfig config = new();
+        private readonly IRouteConfigProvider routeConfigProvider;
+        private readonly IClusterConfigProvider clusterConfigProvider;
 
         /// <summary>
         /// 内存配置提供者
         /// </summary>
         /// <param name="mainConnectionHandler">主连接处理者</param>
-        public MomoryConfigProvider(IMainConnectionHandler mainConnectionHandler)
+        /// <param name="routeConfigProvider"></param>
+        /// <param name="clusterConfigProvider"></param> 
+        public MomoryConfigProvider(
+            IMainConnectionHandler mainConnectionHandler,
+            IRouteConfigProvider routeConfigProvider,
+            IClusterConfigProvider clusterConfigProvider)
         {
             mainConnectionHandler.ConnectionsChanged += MainConnectionChanged;
+            this.routeConfigProvider = routeConfigProvider;
+            this.clusterConfigProvider = clusterConfigProvider;
         }
 
         /// <summary>
@@ -27,8 +36,8 @@ namespace HttpMouse.Implementions
         {
             var oldConfig = this.config;
 
-            var routes = connections.Select(item => item.ToRouteConfig()).ToArray();
-            var clusters = connections.Select(item => item.ToClusterConfig()).ToArray();
+            var routes = connections.Select(item => this.routeConfigProvider.Create(item)).ToArray();
+            var clusters = connections.Select(item => this.clusterConfigProvider.Create(item)).ToArray();
             this.config = new MemoryConfig(routes, clusters);
 
             oldConfig.SignalChange();

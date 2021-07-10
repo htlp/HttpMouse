@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace HttpMouse
 {
     /// <summary>
-    /// 反向连接提值者
+    /// 反向连接提供者
     /// </summary>
     public interface IReverseConnectionProvider
     {

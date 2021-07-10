@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Yarp.ReverseProxy.Configuration;
 
 namespace HttpMouse
 {
@@ -18,20 +17,7 @@ namespace HttpMouse
         /// <summary>
         /// 获取上游地址
         /// </summary>
-        Uri Upstream { get; }
-
-        /// <summary>
-        /// 转换为RouteConfig
-        /// </summary>
-        /// <returns></returns>
-        RouteConfig ToRouteConfig();
-
-        /// <summary>
-        /// 转换为ClusterConfig
-        /// </summary>
-        /// <returns></returns>
-        ClusterConfig ToClusterConfig();
-
+        Uri Upstream { get; } 
 
         /// <summary>
         /// 发送创建反向连接指令

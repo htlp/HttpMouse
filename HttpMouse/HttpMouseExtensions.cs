@@ -57,6 +57,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 }));
 
             services
+                .AddSingleton<IRouteConfigProvider, DefaultRouteConfigProvider>()
+                .AddSingleton<IClusterConfigProvider, DefaultClusterConfigProvider>()
                 .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
                 .AddSingleton<IMainConnectionHandler, MainConnectionHandler>()
                 .AddSingleton<IMainConnectionAuthenticator, MainConnectionAuthenticator>()

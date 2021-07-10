@@ -28,8 +28,8 @@ namespace HttpMouse.Implementions
         /// <returns></returns>
         public ValueTask<bool> AuthenticateAsync(string clientDomain, string? key)
         {
-            var expected = this.options.CurrentValue.Key;
-            var result = key == expected || expected == null;
+            var serverKey = this.options.CurrentValue.Key;
+            var result = serverKey == null || serverKey == key;
             return ValueTask.FromResult(result);
         }
     }

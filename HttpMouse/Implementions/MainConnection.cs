@@ -1,13 +1,9 @@
-﻿using Microsoft.Extensions.Options;
-using System;
+﻿using System;
 using System.Buffers;
 using System.Buffers.Binary;
-using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Yarp.ReverseProxy.Configuration;
-using Yarp.ReverseProxy.Forwarder;
 
 namespace HttpMouse.Implementions
 {
@@ -16,8 +12,7 @@ namespace HttpMouse.Implementions
     /// </summary>
     sealed class MainConnection : IMainConnection
     {
-        private readonly WebSocket webSocket;
-        private readonly IOptionsMonitor<HttpMouseOptions> options;
+        private readonly WebSocket webSocket; 
 
         /// <summary>
         /// 获取绑定的域名
@@ -34,61 +29,16 @@ namespace HttpMouse.Implementions
         /// </summary>
         /// <param name="domain"></param>
         /// <param name="upstream"></param>
-        /// <param name="webSocket"></param>
-        /// <param name="options"></param>
+        /// <param name="webSocket"></param> 
         public MainConnection(
             string domain,
             Uri upstream,
-            WebSocket webSocket,
-            IOptionsMonitor<HttpMouseOptions> options)
+            WebSocket webSocket)
         {
             this.Domain = domain;
             this.Upstream = upstream;
-            this.webSocket = webSocket;
-            this.options = options;
-        }
-
-        /// <summary>
-        /// 转换为ClusterConfig
-        /// </summary>
-        /// <returns></returns>
-        public ClusterConfig ToClusterConfig()
-        {
-            var address = this.Upstream.ToString();
-            var destinations = new Dictionary<string, DestinationConfig>
-            {
-                [this.Domain] = new DestinationConfig { Address = address }
-            };
-
-            if (this.options.CurrentValue.HttpRequest.TryGetValue(this.Domain, out var httpRequest) == false)
-            {
-                httpRequest = ForwarderRequestConfig.Empty;
-            }
-
-            return new ClusterConfig
-            {
-                ClusterId = this.Domain,
-                Destinations = destinations,
-                HttpRequest = httpRequest
-            };
-        }
-
-        /// <summary>
-        /// 转换为RouteConfig
-        /// </summary>
-        /// <returns></returns>
-        public RouteConfig ToRouteConfig()
-        {
-            return new RouteConfig
-            {
-                RouteId = this.Domain,
-                ClusterId = this.Domain,
-                Match = new RouteMatch
-                {
-                    Hosts = new List<string> { this.Domain }
-                }
-            };
-        }
+            this.webSocket = webSocket; 
+        } 
 
         /// <summary>
         /// 发送创建反向连接指令
