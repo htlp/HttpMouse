@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
-using System.Net;
 using System.Net.Http;
-using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Yarp.ReverseProxy.Forwarder;
@@ -13,13 +11,11 @@ namespace HttpMouse.Implementions
     /// <summary>
     /// 反向连接的HttpClient工厂
     /// </summary>
-    sealed class HttpMouseForwarderHttpClientFactory : IForwarderHttpClientFactory, IDisposable
+    sealed class HttpMouseForwarderHttpClientFactory : ForwarderHttpClientFactory
     {
         private readonly IReverseConnectionHandler reverseConnectionHandler;
         private readonly ILogger<HttpMouseForwarderHttpClientFactory> logger;
-
         private readonly HttpRequestOptionsKey<string> clientDomainKey = new("ClientDomain");
-        private readonly SocketsHttpHandler httpHandler;
 
         /// <summary>
         /// 反向连接的HttpClient工厂
@@ -32,19 +28,17 @@ namespace HttpMouse.Implementions
         {
             this.reverseConnectionHandler = reverseConnectionHandler;
             this.logger = logger;
+        }
 
-            this.httpHandler = new SocketsHttpHandler
-            {
-                UseProxy = false,
-                UseCookies = false,
-                AllowAutoRedirect = false,
-                AutomaticDecompression = DecompressionMethods.None,
-                ConnectCallback = this.ConnectCallback,
-                SslOptions = new SslClientAuthenticationOptions
-                {
-                    RemoteCertificateValidationCallback = delegate { return true; }
-                }
-            };
+        /// <summary>
+        /// 配置handler
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="handler"></param>
+        protected override void ConfigureHandler(ForwarderHttpClientContext context, SocketsHttpHandler handler)
+        {
+            base.ConfigureHandler(context, handler);
+            handler.ConnectCallback = this.ConnectCallback;
         }
 
         /// <summary>
@@ -69,24 +63,6 @@ namespace HttpMouse.Implementions
                 this.logger.LogWarning(ex.Message);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// 创建HttpMessageInvoker
-        /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        public HttpMessageInvoker CreateClient(ForwarderHttpClientContext context)
-        {
-            return new HttpMessageInvoker(this.httpHandler, disposeHandler: false);
-        }
-
-        /// <summary>
-        /// 释放资源
-        /// </summary>
-        public void Dispose()
-        {
-            this.httpHandler.Dispose();
         }
     }
 }

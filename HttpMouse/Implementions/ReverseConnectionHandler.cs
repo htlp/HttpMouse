@@ -17,9 +17,8 @@ namespace HttpMouse.Implementions
         private readonly IHttpMouseClientHandler httpMouseClientHandler;
         private readonly ILogger<ReverseConnectionHandler> logger;
 
-        private uint _connectionId = 0;
         private readonly TimeSpan timeout = TimeSpan.FromSeconds(10d);
-        private readonly ConcurrentDictionary<uint, IAwaitableCompletionSource<Stream>> connectionAwaiterTable = new();
+        private readonly ConcurrentDictionary<Guid, IAwaitableCompletionSource<Stream>> connectionAwaiterTable = new();
 
         /// <summary>
         /// 反向连接提值者
@@ -47,7 +46,7 @@ namespace HttpMouse.Implementions
                 throw new Exception($"无法创建反向连接：上游{clientDomain}未连接");
             }
 
-            var connectionId = Interlocked.Increment(ref this._connectionId);
+            var connectionId = Guid.NewGuid();
             using var connectionAwaiter = AwaitableCompletionSource.Create<Stream>();
             connectionAwaiter.TrySetExceptionAfter(new TimeoutException($"创建反向连接{connectionId}超时"), this.timeout);
             this.connectionAwaiterTable.TryAdd(connectionId, connectionAwaiter);
@@ -107,7 +106,7 @@ namespace HttpMouse.Implementions
         /// <param name="context"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        private static bool TryReadConnectionId(HttpContext context, out uint value)
+        private static bool TryReadConnectionId(HttpContext context, out Guid value)
         {
             const string method = "REVERSE";
             if (context.Request.Method != method)
@@ -117,7 +116,7 @@ namespace HttpMouse.Implementions
             }
 
             var path = context.Request.Path.Value.AsSpan();
-            return uint.TryParse(path[1..], out value);
+            return Guid.TryParse(path[1..], out value);
         }
     }
 }

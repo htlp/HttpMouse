@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Buffers.Binary;
+using System.Buffers;
 using System.IO;
 using System.Net;
 using System.Net.Security;
@@ -64,14 +64,24 @@ namespace HttpMouse.Client.Implementions
         /// </summary> 
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<uint> ReadConnectionIdAsync(CancellationToken cancellationToken)
+        private async Task<Guid> ReadConnectionIdAsync(CancellationToken cancellationToken)
         {
-            var connectionIdBuffer = new byte[sizeof(uint)];
-            var result = await this.mainConnection.ReceiveAsync(connectionIdBuffer, cancellationToken);
+            var buffer = ArrayPool<byte>.Shared.Rent(64);
+            try
+            {
+                var result = await this.mainConnection.ReceiveAsync(buffer, cancellationToken);
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription);
+                }
 
-            return result.MessageType == WebSocketMessageType.Close
-                ? throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription)
-                : BinaryPrimitives.ReadUInt32BigEndian(connectionIdBuffer);
+                var id = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
+                return Guid.Parse(id);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
 
@@ -80,7 +90,7 @@ namespace HttpMouse.Client.Implementions
         /// </summary> 
         /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
-        private async void TransportAsync(uint connectionId, CancellationToken cancellationToken)
+        private async void TransportAsync(Guid connectionId, CancellationToken cancellationToken)
         {
             try
             {
@@ -105,7 +115,7 @@ namespace HttpMouse.Client.Implementions
         /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task<Stream> CreateDownConnectionAsync(uint connectionId, CancellationToken cancellationToken)
+        private async Task<Stream> CreateDownConnectionAsync(Guid connectionId, CancellationToken cancellationToken)
         {
             var server = this.options.Server;
             var endpoint = new DnsEndPoint(server.Host, server.Port);

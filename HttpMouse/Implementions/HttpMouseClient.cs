@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers;
-using System.Buffers.Binary;
 using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -50,11 +50,10 @@ namespace HttpMouse.Implementions
         /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task SendCreateConnectionAsync(uint connectionId, CancellationToken cancellationToken)
+        public Task SendCreateConnectionAsync(Guid connectionId, CancellationToken cancellationToken)
         {
-            var channelIdBuffer = new byte[sizeof(uint)];
-            BinaryPrimitives.WriteUInt32BigEndian(channelIdBuffer, connectionId);
-            return this.webSocket.SendAsync(channelIdBuffer, WebSocketMessageType.Binary, true, cancellationToken);
+            var buffer = Encoding.UTF8.GetBytes(connectionId.ToString());
+            return this.webSocket.SendAsync(buffer, WebSocketMessageType.Binary, true, cancellationToken);
         }
 
         /// <summary>

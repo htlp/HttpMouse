@@ -11,9 +11,10 @@ namespace HttpMouse.Client.Implementions
     /// </summary>
     sealed class HttpMouseClientFactory : IHttpMouseClientFactory
     {
+        private const string SERVER_KEY = "ServerKey";
         private const string CLIENT_DOMAIN = "ClientDomain";
         private const string CLIENT_UP_STREAM = "ClientUpstream";
-        private const string SERVER_KEY = "ServerKey";
+      
         private readonly IOptionsMonitor<HttpMouseClientOptions> options;
 
         /// <summary>

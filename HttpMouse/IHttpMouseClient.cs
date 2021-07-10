@@ -30,7 +30,7 @@ namespace HttpMouse
         /// <param name="connectionId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task SendCreateConnectionAsync(uint connectionId, CancellationToken cancellationToken);
+        Task SendCreateConnectionAsync(Guid connectionId, CancellationToken cancellationToken);
 
         /// <summary>
         /// 由于异常而关闭
