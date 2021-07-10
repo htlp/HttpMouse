@@ -16,23 +16,23 @@ namespace HttpMouse.Client.Implementions
     /// </summary>
     sealed class HttpMouseClient : IHttpMouseClient
     {
-        private readonly ClientWebSocket mainConnection;
+        private readonly ClientWebSocket webScoket;
         private readonly HttpMouseClientOptions options;
         private readonly CancellationTokenSource disposeCancellationTokenSource = new();
 
         /// <summary>
         /// 获取是否连接
         /// </summary>
-        public bool IsConnected => this.mainConnection.State == WebSocketState.Open;
+        public bool IsConnected => this.webScoket.State == WebSocketState.Open;
 
         /// <summary>
         /// 客户端
         /// </summary>
-        /// <param name="mainConnection"></param>
+        /// <param name="webScoket"></param>
         /// <param name="options"></param>
-        public HttpMouseClient(ClientWebSocket mainConnection, HttpMouseClientOptions options)
+        public HttpMouseClient(ClientWebSocket webScoket, HttpMouseClientOptions options)
         {
-            this.mainConnection = mainConnection;
+            this.webScoket = webScoket;
             this.options = options;
         }
 
@@ -69,14 +69,14 @@ namespace HttpMouse.Client.Implementions
             var buffer = ArrayPool<byte>.Shared.Rent(64);
             try
             {
-                var result = await this.mainConnection.ReceiveAsync(buffer, cancellationToken);
+                var result = await this.webScoket.ReceiveAsync(buffer, cancellationToken);
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
                     throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription);
                 }
 
-                var id = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
-                return Guid.Parse(id);
+                var guid = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
+                return Guid.Parse(guid);
             }
             finally
             {
@@ -159,7 +159,7 @@ namespace HttpMouse.Client.Implementions
         {
             this.disposeCancellationTokenSource.Cancel();
             this.disposeCancellationTokenSource.Dispose();
-            this.mainConnection.Dispose();
+            this.webScoket.Dispose();
         }
     }
 }
