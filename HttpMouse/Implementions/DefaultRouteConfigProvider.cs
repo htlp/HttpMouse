@@ -11,11 +11,11 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 创建路由
         /// </summary>
-        /// <param name="mainConnection"></param>
+        /// <param name="httpMouseClient"></param>
         /// <returns></returns>
-        public virtual RouteConfig Create(IHttpMouseClient mainConnection)
+        public virtual RouteConfig Create(IHttpMouseClient httpMouseClient)
         {
-            var domain = mainConnection.Domain;
+            var domain = httpMouseClient.Domain;
             return new RouteConfig
             {
                 RouteId = domain,

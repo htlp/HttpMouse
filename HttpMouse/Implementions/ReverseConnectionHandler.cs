@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 namespace HttpMouse.Implementions
 {
     /// <summary>
-    /// 表示反向连接提值者
+    /// 表示反向连接处理者
     /// </summary>
-    sealed class ReverseConnectionProvider : IReverseConnectionProvider
+    sealed class ReverseConnectionHandler : IReverseConnectionHandler
     {
-        private readonly IHttpMouseClientHandler mainConnectionHandler;
-        private readonly ILogger<ReverseConnectionProvider> logger;
+        private readonly IHttpMouseClientHandler httpMouseClientHandler;
+        private readonly ILogger<ReverseConnectionHandler> logger;
 
         private uint _connectionId = 0;
         private readonly TimeSpan timeout = TimeSpan.FromSeconds(10d);
@@ -24,13 +24,13 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 反向连接提值者
         /// </summary>
-        /// <param name="mainConnectionHandler"></param>
+        /// <param name="httpMouseClientHandler"></param>
         /// <param name="logger"></param>
-        public ReverseConnectionProvider(
-            IHttpMouseClientHandler mainConnectionHandler,
-            ILogger<ReverseConnectionProvider> logger)
+        public ReverseConnectionHandler(
+            IHttpMouseClientHandler httpMouseClientHandler,
+            ILogger<ReverseConnectionHandler> logger)
         {
-            this.mainConnectionHandler = mainConnectionHandler;
+            this.httpMouseClientHandler = httpMouseClientHandler;
             this.logger = logger;
         }
 
@@ -42,7 +42,7 @@ namespace HttpMouse.Implementions
         /// <returns></returns>
         public async ValueTask<Stream> CreateAsync(string clientDomain, CancellationToken cancellation)
         {
-            if (this.mainConnectionHandler.TryGetValue(clientDomain, out var mainConnection) == false)
+            if (this.httpMouseClientHandler.TryGetValue(clientDomain, out var httpMouseClient) == false)
             {
                 throw new Exception($"无法创建反向连接：上游{clientDomain}未连接");
             }
@@ -54,7 +54,7 @@ namespace HttpMouse.Implementions
 
             try
             {
-                await mainConnection.SendCreateConnectionAsync(connectionId, cancellation);
+                await httpMouseClient.SendCreateConnectionAsync(connectionId, cancellation);
                 return await connectionAwaiter.Task;
             }
             catch (Exception ex)

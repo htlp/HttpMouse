@@ -24,12 +24,12 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 创建集群
         /// </summary>
-        /// <param name="mainConnection"></param>
+        /// <param name="httpMouseClient"></param>
         /// <returns></returns>
-        public virtual ClusterConfig Create(IHttpMouseClient mainConnection)
+        public virtual ClusterConfig Create(IHttpMouseClient httpMouseClient)
         {
-            var domain = mainConnection.Domain;
-            var address = mainConnection.Upstream.ToString();
+            var domain = httpMouseClient.Domain;
+            var address = httpMouseClient.Upstream.ToString();
 
             var destinations = new Dictionary<string, DestinationConfig>
             {

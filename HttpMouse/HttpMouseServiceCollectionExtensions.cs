@@ -15,7 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection
     /// <summary>
     /// HttpMouse的相关扩展
     /// </summary>
-    public static class HttpMouseExtensions
+    public static class HttpMouseServiceCollectionExtensions
     {
         /// <summary>
         /// 注册HttpMouse相关服务
@@ -59,10 +59,11 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton<IRouteConfigProvider, DefaultRouteConfigProvider>()
                 .AddSingleton<IClusterConfigProvider, DefaultClusterConfigProvider>()
-                .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
+                .AddSingleton<IHttpMouseClientAuthenticator, DefaultHttpMouseClientAuthenticator>()
+
                 .AddSingleton<IHttpMouseClientHandler, HttpMouseClientHandler>()
-                .AddSingleton<IHttpMouseClientAuthenticator, HttpMouseClientAuthenticator>()
-                .AddSingleton<IReverseConnectionProvider, ReverseConnectionProvider>()
+                .AddSingleton<IReverseConnectionHandler, ReverseConnectionHandler>()
+                .AddSingleton<IProxyConfigProvider, MomoryConfigProvider>()
                 .AddSingleton<IForwarderHttpClientFactory, ReverseForwarderHttpClientFactory>();
 
             return builder;
@@ -75,12 +76,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IApplicationBuilder UseHttpMouse(this IApplicationBuilder builder)
         {
-            var mainConnectionHandler = builder.ApplicationServices.GetRequiredService<IHttpMouseClientHandler>();
-            var reverseConnectionProvider = builder.ApplicationServices.GetRequiredService<IReverseConnectionProvider>();
+            var httpMouseClientHandler = builder.ApplicationServices.GetRequiredService<IHttpMouseClientHandler>();
+            var reverseConnectionHandler = builder.ApplicationServices.GetRequiredService<IReverseConnectionHandler>();
 
             builder.UseWebSockets();
-            builder.Use(mainConnectionHandler.HandleConnectionAsync);
-            builder.Use(reverseConnectionProvider.HandleConnectionAsync);
+            builder.Use(httpMouseClientHandler.HandleConnectionAsync);
+            builder.Use(reverseConnectionHandler.HandleConnectionAsync);
 
             return builder;
         }

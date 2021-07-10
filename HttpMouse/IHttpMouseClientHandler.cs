@@ -8,7 +8,7 @@ namespace HttpMouse
     /// <summary>
     /// 客户端处理者
     /// </summary>
-    public interface IHttpMouseClientHandler
+    interface IHttpMouseClientHandler
     {
         /// <summary>
         /// 客户端变化后事件

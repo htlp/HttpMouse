@@ -10,8 +10,8 @@ namespace HttpMouse
         /// <summary>
         /// 创建路由
         /// </summary>
-        /// <param name="mainConnection"></param>
+        /// <param name="httpMouseClient"></param> 
         /// <returns></returns>
-        RouteConfig Create(IHttpMouseClient mainConnection);
+        RouteConfig Create(IHttpMouseClient httpMouseClient);
     }
 }

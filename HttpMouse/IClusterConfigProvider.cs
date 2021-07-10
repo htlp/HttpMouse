@@ -10,8 +10,8 @@ namespace HttpMouse
         /// <summary>
         /// 创建集群
         /// </summary>
-        /// <param name="mainConnection"></param>
+        /// <param name="httpMouseClient"></param>
         /// <returns></returns>
-        ClusterConfig Create(IHttpMouseClient mainConnection);
+        ClusterConfig Create(IHttpMouseClient httpMouseClient);
     }
 }

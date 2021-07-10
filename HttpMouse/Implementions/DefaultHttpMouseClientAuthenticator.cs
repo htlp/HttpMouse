@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 namespace HttpMouse.Implementions
 {
     /// <summary>
-    /// 客户端认证者
+    /// 默认的客户端认证者
     /// </summary>
-    sealed class HttpMouseClientAuthenticator : IHttpMouseClientAuthenticator
+    public class DefaultHttpMouseClientAuthenticator : IHttpMouseClientAuthenticator
     {
         private readonly IOptionsMonitor<HttpMouseOptions> options;
 
@@ -15,7 +15,7 @@ namespace HttpMouse.Implementions
         /// 客户端认证者
         /// </summary>
         /// <param name="options"></param>
-        public HttpMouseClientAuthenticator(IOptionsMonitor<HttpMouseOptions> options)
+        public DefaultHttpMouseClientAuthenticator(IOptionsMonitor<HttpMouseOptions> options)
         {
             this.options = options;
         }
@@ -25,7 +25,7 @@ namespace HttpMouse.Implementions
         /// </summary>
         /// <param name="httpMouseClient">客户端</param>
         /// <returns></returns>
-        public ValueTask<bool> AuthenticateAsync(IHttpMouseClient httpMouseClient)
+        public virtual ValueTask<bool> AuthenticateAsync(IHttpMouseClient httpMouseClient)
         {
             var serverKey = this.options.CurrentValue.Key;
             var result = serverKey == null || serverKey == httpMouseClient.Key;

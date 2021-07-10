@@ -15,29 +15,29 @@ namespace HttpMouse.Implementions
         /// <summary>
         /// 内存配置提供者
         /// </summary>
-        /// <param name="mainConnectionHandler">主连接处理者</param>
+        /// <param name="httpMouseClientHandler"></param>
         /// <param name="routeConfigProvider"></param>
         /// <param name="clusterConfigProvider"></param> 
         public MomoryConfigProvider(
-            IHttpMouseClientHandler mainConnectionHandler,
+            IHttpMouseClientHandler httpMouseClientHandler,
             IRouteConfigProvider routeConfigProvider,
             IClusterConfigProvider clusterConfigProvider)
         {
-            mainConnectionHandler.ClientsChanged += MainConnectionChanged;
+            httpMouseClientHandler.ClientsChanged += HttpMouseClientsChanged;
             this.routeConfigProvider = routeConfigProvider;
             this.clusterConfigProvider = clusterConfigProvider;
         }
 
         /// <summary>
-        /// 连接变化后
+        /// 客户端变化后
         /// </summary>
-        /// <param name="connections"></param>
-        private void MainConnectionChanged(IHttpMouseClient[] connections)
+        /// <param name="clients"></param>
+        private void HttpMouseClientsChanged(IHttpMouseClient[] clients)
         {
             var oldConfig = this.config;
 
-            var routes = connections.Select(item => this.routeConfigProvider.Create(item)).ToArray();
-            var clusters = connections.Select(item => this.clusterConfigProvider.Create(item)).ToArray();
+            var routes = clients.Select(item => this.routeConfigProvider.Create(item)).ToArray();
+            var clusters = clients.Select(item => this.clusterConfigProvider.Create(item)).ToArray();
             this.config = new MemoryConfig(routes, clusters);
 
             oldConfig.SignalChange();
