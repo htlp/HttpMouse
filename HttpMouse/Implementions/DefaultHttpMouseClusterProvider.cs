@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using Yarp.ReverseProxy.Configuration;
-using Yarp.ReverseProxy.Forwarder;
 
 namespace HttpMouse.Implementions
 {
@@ -36,16 +35,22 @@ namespace HttpMouse.Implementions
                 [domain] = new DestinationConfig { Address = address }
             };
 
-            if (this.options.CurrentValue.HttpRequest.TryGetValue(domain, out var httpRequest) == false)
-            {
-                httpRequest = ForwarderRequestConfig.Empty;
-            }
-
-            return new ClusterConfig
+            var clusterConfig = new ClusterConfig
             {
                 ClusterId = domain,
-                Destinations = destinations,
-                HttpRequest = httpRequest
+                Destinations = destinations
+            };
+
+            var opt = this.options.CurrentValue;
+            if (opt.Clusters.TryGetValue(domain, out var setting) == false)
+            {
+                setting = opt.DefaultCluster;
+            }
+
+            return clusterConfig with
+            {
+                HttpRequest = setting.HttpRequest,
+                HttpClient = setting.HttpClient
             };
         }
     }

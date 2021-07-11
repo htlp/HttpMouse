@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Options;
+using System.Collections.Generic;
 using Yarp.ReverseProxy.Configuration;
 
 namespace HttpMouse.Implementions
@@ -8,6 +9,17 @@ namespace HttpMouse.Implementions
     /// </summary>
     public class DefaultHttpMouseRouteProvider : IHttpMouseRouteProvider
     {
+        private IOptionsMonitor<HttpMouseOptions> options;
+
+        /// <summary>
+        /// 路由配置提供者
+        /// </summary>
+        /// <param name="options"></param>
+        public DefaultHttpMouseRouteProvider(IOptionsMonitor<HttpMouseOptions> options)
+        {
+            this.options = options;
+        }
+
         /// <summary>
         /// 创建路由
         /// </summary>
@@ -16,7 +28,7 @@ namespace HttpMouse.Implementions
         public virtual RouteConfig Create(IHttpMouseClient httpMouseClient)
         {
             var domain = httpMouseClient.Domain;
-            return new RouteConfig
+            var routeConfig = new RouteConfig
             {
                 RouteId = domain,
                 ClusterId = domain,
@@ -24,6 +36,18 @@ namespace HttpMouse.Implementions
                 {
                     Hosts = new List<string> { domain }
                 }
+            };
+
+            var opt = this.options.CurrentValue;
+            if (opt.Routes.TryGetValue(domain, out var setting) == false)
+            {
+                setting = opt.DefaultRoute;
+            }
+
+            return routeConfig with
+            {
+                CorsPolicy = setting.CorsPolicy,
+                AuthorizationPolicy = setting.AuthorizationPolicy
             };
         }
     }
