@@ -82,8 +82,8 @@ class ComstomClientVerifier : IHttpMouseClientVerifier
 }
 ```
 
-#### IReverseProxyBuilder
-services.AddHttpMouse()返回YARP的IReverseProxyBuilder对象，此对象还有其它比较重要的功能。
+#### YARP功能
+services.AddHttpMouse()返回YARP的IReverseProxyBuilder对象，此对象还有其它比较重要的功能。有关YARP的完整功能介绍，可以阅读[YARP文档](https://microsoft.github.io/reverse-proxy/articles/getting-started.html)
 
 ##### AddConfigFilter
 AddConfigFilter()实际注册了一个IProxyConfigFilter服务，服务用于修改既有的路由与集群配置。
