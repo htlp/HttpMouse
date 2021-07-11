@@ -28,26 +28,22 @@ namespace HttpMouse.Implementions
         public virtual RouteConfig Create(IHttpMouseClient httpMouseClient)
         {
             var domain = httpMouseClient.Domain;
-            var routeConfig = new RouteConfig
-            {
-                RouteId = domain,
-                ClusterId = domain,
-                Match = new RouteMatch
-                {
-                    Hosts = new List<string> { domain }
-                }
-            };
-
             var opt = this.options.CurrentValue;
             if (opt.Routes.TryGetValue(domain, out var setting) == false)
             {
                 setting = opt.DefaultRoute;
             }
 
-            return routeConfig with
+            return new RouteConfig
             {
+                RouteId = domain,
+                ClusterId = domain,
                 CorsPolicy = setting.CorsPolicy,
-                AuthorizationPolicy = setting.AuthorizationPolicy
+                AuthorizationPolicy = setting.AuthorizationPolicy,
+                Match = new RouteMatch
+                {
+                    Hosts = new List<string> { domain }
+                }
             };
         }
     }

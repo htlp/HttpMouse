@@ -35,20 +35,16 @@ namespace HttpMouse.Implementions
                 [domain] = new DestinationConfig { Address = address }
             };
 
-            var clusterConfig = new ClusterConfig
-            {
-                ClusterId = domain,
-                Destinations = destinations
-            };
-
             var opt = this.options.CurrentValue;
             if (opt.Clusters.TryGetValue(domain, out var setting) == false)
             {
                 setting = opt.DefaultCluster;
             }
 
-            return clusterConfig with
+            return new ClusterConfig
             {
+                ClusterId = domain,
+                Destinations = destinations,
                 HttpRequest = setting.HttpRequest,
                 HttpClient = setting.HttpClient
             };
